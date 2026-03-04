@@ -13,6 +13,8 @@ Source code to accompany our YouTube video series. Find the script mentioned in 
 | Video | Folder |
 |-------|--------|
 | Handling 2FA with Browserless LiveURL | [`hybrid-2fa/`](./hybrid-2fa) |
+| Persisting State — Session Management | [`persisting-state/`](./persisting-state) |
+| Standard Sessions — Session Management | [`standard-sessions/`](./standard-sessions) |
 
 ## Prerequisites
 
