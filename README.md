@@ -15,8 +15,10 @@ Source code to accompany our YouTube video series. Find the script mentioned in 
 | Handling 2FA with Browserless LiveURL | [`hybrid-2fa/`](./hybrid-2fa) |
 | Persisting State — Session Management | [`persisting-state/`](./persisting-state) |
 | Standard Sessions — Session Management | [`standard-sessions/`](./standard-sessions) |
+| Web Scraping with Browserless | [`webscraping/`](./webscraping) |
 
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) v18+
+- [Python 3](https://www.python.org/) 3.8+ (for scripts that use Python)
 - A [Browserless](https://browserless.io) API token

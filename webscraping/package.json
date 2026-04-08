@@ -1,0 +1,15 @@
+{
+  "name": "webscraping",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "demo2": "node demo2-scrape.mjs",
+    "demo3": "node demo3-smart-scrape.mjs",
+    "demo4:broken": "python3 demo4-unblock-broken.py",
+    "demo4:fixed": "node demo4-unblock-fixed.mjs",
+    "demo4": "node demo4-unblock.mjs"
+  },
+  "dependencies": {
+    "puppeteer-core": "^24.0.0"
+  }
+}
