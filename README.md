@@ -16,6 +16,7 @@ Source code to accompany our YouTube video series. Find the script mentioned in 
 | Persisting State — Session Management | [`persisting-state/`](./persisting-state) |
 | Standard Sessions — Session Management | [`standard-sessions/`](./standard-sessions) |
 | Web Scraping with Browserless | [`webscraping/`](./webscraping) |
+| Solving CAPTCHAs with Puppeteer & Playwright | [`SolveCaptchaPuppeteerPlaywright/`](./SolveCaptchaPuppeteerPlaywright) |
 
 ## Prerequisites
 
