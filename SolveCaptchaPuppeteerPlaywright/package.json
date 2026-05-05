@@ -1,0 +1,19 @@
+{
+  "name": "captcha-solving-scripts",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "puppeteer": "node captcha-puppeteer.js",
+    "playwright": "node captcha-playwright.js",
+    "auto": "node captcha-puppeteer-auto.js"
+  },
+  "dependencies": {
+    "puppeteer-core": "^23.0.0",
+    "playwright-core": "^1.47.0"
+  },
+  "main": "captcha-playwright.js",
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
