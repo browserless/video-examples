@@ -55,7 +55,7 @@ wss://production-sfo.browserless.io/chromium?token=...&solveCaptchas=true&integr
 
 | Param | What it does |
 | --- | --- |
-| `solveCaptchas=true` | Enables the Browserless CAPTCHA solver. When the page loads a CAPTCHA challenge (reCAPTCHA, hCaptcha, Turnstile, etc.), Browserless detects it and solves it server-side — no agent action required. |
+| `solveCaptchas=true` | Enables the Browserless CAPTCHA solver. When the page loads a CAPTCHA challenge, Browserless detects it and solves it server-side — no agent action required. |
 | `integrations=browseruse` | Tells Browserless which client library is connecting so the session is tuned for browser-use's automation patterns (cleaner session lifecycle, better diagnostics). |
 
 ## File index
