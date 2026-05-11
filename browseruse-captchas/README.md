@@ -1,11 +1,13 @@
-# browser-use + Browserless: reCAPTCHA v2 Auto-Solver
+# browser-use + Browserless: Automated CAPTCHA Handling
 
 A minimal demo showing how [browser-use](https://github.com/browser-use/browser-use)
 (an LLM-powered browser agent) drives a remote [Browserless](https://browserless.io)
-Chromium instance to solve a reCAPTCHA v2 challenge — entirely hands-free.
+Chromium instance through pages that throw a CAPTCHA — entirely hands-free.
 
-The CAPTCHA is solved by Browserless's built-in solver service; the agent's job
-is just to navigate to the page, wait for the solve, and click **Check**.
+The CAPTCHA is handled by Browserless's built-in solver service, which covers
+the common types you'll run into on the open web (reCAPTCHA v2 / v3,
+hCaptcha, Cloudflare Turnstile, and similar). The agent's job is just to
+navigate, wait for the solve, and proceed with the rest of the task.
 
 ## What you'll see
 
@@ -53,7 +55,7 @@ wss://production-sfo.browserless.io/chromium?token=...&solveCaptchas=true&integr
 
 | Param | What it does |
 | --- | --- |
-| `solveCaptchas=true` | Enables the Browserless CAPTCHA solver. When the page loads a reCAPTCHA, Browserless detects it and solves it server-side, no agent action required. |
+| `solveCaptchas=true` | Enables the Browserless CAPTCHA solver. When the page loads a CAPTCHA challenge (reCAPTCHA, hCaptcha, Turnstile, etc.), Browserless detects it and solves it server-side — no agent action required. |
 | `integrations=browseruse` | Tells Browserless which client library is connecting so the session is tuned for browser-use's automation patterns (cleaner session lifecycle, better diagnostics). |
 
 ## File index
