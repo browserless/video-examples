@@ -1,0 +1,17 @@
+{
+  "name": "authprofiles",
+  "version": "1.0.0",
+  "description": "Minimal demo of Browserless Authenticated Profiles",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "puppeteer-core": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

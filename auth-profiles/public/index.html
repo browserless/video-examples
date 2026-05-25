@@ -1,0 +1,1694 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Browserless · Authenticated Profiles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --bg2: #111;
+    --panel: #161616;
+    --border: #222;
+    --border2: #2a2a2a;
+    --fg: #e6e6e6;
+    --dim: #888;
+    --dim2: #555;
+    --accent: #f0c460;
+    --green: #4ade80;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --code-bg: #1a1a1a;
+    --term-bg: #0c0c0c;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg); color: var(--fg);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px; line-height: 1.5;
+    overflow: hidden;
+  }
+  code, pre, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  .app {
+    display: grid;
+    grid-template-columns: 240px 1fr 1fr;
+    height: 100vh;
+    min-height: 600px;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar header {
+    padding: 20px 18px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar header .brand {
+    font-weight: 600; font-size: 13px; color: var(--fg);
+    letter-spacing: -0.01em;
+  }
+  .sidebar header .sub {
+    font-size: 11px; color: var(--dim);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-top: 2px;
+  }
+  .tabs { padding: 10px 8px; flex: 1; overflow-y: auto; }
+  .tab {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 10px 12px;
+    background: transparent; border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--dim);
+    cursor: pointer; text-align: left;
+    font-size: 13px; font-family: inherit;
+    margin-bottom: 4px;
+    transition: background 0.1s;
+  }
+  .tab:hover { background: #1a1a1a; color: var(--fg); }
+  .tab.active {
+    background: #1c1c1c;
+    border-color: var(--border2);
+    color: var(--fg);
+  }
+  .tab .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px;
+    border-radius: 4px;
+    background: #222; color: var(--dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 600;
+  }
+  .tab.active .num { background: var(--accent); color: #000; }
+  .tab .label { flex: 1; }
+  .tab .status {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--dim2); flex-shrink: 0;
+  }
+  .tab[data-status="running"] .status { background: var(--accent); animation: pulse 1s infinite; }
+  .tab[data-status="success"] .status { background: var(--green); }
+  .tab[data-status="error"]   .status { background: var(--red); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .sidebar-footer {
+    border-top: 1px solid var(--border);
+    padding: 12px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: var(--dim);
+  }
+  .sidebar-footer button {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--dim);
+    font-size: 11px; padding: 4px 10px;
+    border-radius: 4px; cursor: pointer;
+    font-family: inherit;
+  }
+  .sidebar-footer button:hover { color: var(--fg); border-color: #444; }
+
+  /* ── PANELS ── */
+  .panel {
+    padding: 18px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    gap: 12px;
+    min-width: 0; min-height: 0;
+  }
+  .panel-header {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-shrink: 0;
+  }
+  .panel-label {
+    font-size: 10px; color: var(--dim);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    font-weight: 600;
+  }
+  .panel-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* ── MAC WINDOW ── */
+  .mac {
+    background: var(--code-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border2);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  .mac.flex { flex: 1; }
+  .mac-titlebar {
+    background: linear-gradient(180deg, #353535 0%, #2a2a2a 100%);
+    padding: 8px 14px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid #1a1a1a;
+    flex-shrink: 0;
+  }
+  .mac-dots { display: flex; gap: 6px; }
+  .mac-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 0.5px solid rgba(0,0,0,0.3);
+  }
+  .mac-dot.red    { background: #ff5f57; }
+  .mac-dot.yellow { background: #febc2e; }
+  .mac-dot.green  { background: #28c840; }
+  .mac-title {
+    flex: 1; text-align: center;
+    font-size: 11.5px; color: #bbb;
+    font-family: 'JetBrains Mono', monospace;
+    margin-right: 48px; /* visual balance vs dots */
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .mac-body { flex: 1; overflow: auto; min-height: 0; }
+
+  /* ── SUB-TABS (step 4) ── */
+  .sub-tabs {
+    display: flex; gap: 2px;
+    background: #1f1f1f;
+    border-bottom: 1px solid var(--border2);
+    padding: 0 8px;
+    flex-shrink: 0;
+  }
+  .sub-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--dim);
+    padding: 8px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: color 0.1s, border-color 0.1s;
+  }
+  .sub-tab:hover { color: var(--fg); }
+  .sub-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ── TERMINAL STACK (step 4 multi-mode) ── */
+  .term-stack {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex; flex-direction: column;
+    gap: 10px;
+  }
+  .term-card {
+    background: var(--code-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border2);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+    display: flex; flex-direction: column;
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .term-card .mac-titlebar {
+    border-radius: 8px 8px 0 0;
+  }
+  .term-card .term-body {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none;
+    overflow: auto;
+  }
+  .term-card .results {
+    padding: 8px 10px;
+    border-top: 1px solid var(--border);
+    max-height: 40%;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .term-card .results:empty { display: none; }
+
+  /* Run buttons row for multi mode */
+  .multi-actions { display: flex; gap: 8px; }
+  .multi-actions .run-btn { padding: 6px 12px; font-size: 11px; }
+
+  /* ── CODE ── */
+  .code {
+    margin: 0;
+    padding: 14px 0;
+    font-size: 12.5px; line-height: 1.7;
+  }
+  .code-line {
+    display: flex;
+    padding: 0 16px;
+    transition: background 0.15s;
+    border-left: 2px solid transparent;
+  }
+  .code-line.highlight {
+    background: rgba(240, 196, 96, 0.10);
+    border-left-color: var(--accent);
+  }
+  .code-ln {
+    color: #3d3d3d;
+    width: 28px; flex-shrink: 0;
+    user-select: none; text-align: right;
+    padding-right: 14px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .code-src {
+    white-space: pre;
+    font-family: 'JetBrains Mono', monospace;
+    color: #d4d4d4;
+  }
+  .tok-cmt  { color: #6a7a6a; font-style: italic; }
+  .tok-str  { color: #ce9178; }
+  .tok-key  { color: #c586c0; }
+  .tok-fn   { color: #dcdcaa; }
+  .tok-num  { color: #b5cea8; }
+  .tok-bool { color: #569cd6; }
+
+  /* ── TERMINAL ── */
+  .term-body {
+    background: var(--term-bg);
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; line-height: 1.65;
+    color: #ddd;
+    overflow: auto;
+    flex: 1; min-height: 0;
+  }
+  .term-line { display: block; white-space: pre-wrap; word-break: break-word; margin-bottom: 1px; }
+  .term-line .marker { margin-right: 8px; }
+  .term-line.step    { color: #d8d8d8; }
+  .term-line.step    .marker { color: var(--blue); }
+  .term-line.success { color: var(--green); }
+  .term-line.success .marker { color: var(--green); }
+  .term-line.error   { color: var(--red); }
+  .term-line.error   .marker { color: var(--red); }
+  .term-line.note    { color: var(--dim); font-style: italic; }
+  .term-cursor {
+    display: inline-block;
+    width: 7px; height: 13px;
+    background: var(--green);
+    vertical-align: text-bottom;
+    margin-left: 2px;
+    animation: blink 1s steps(2) infinite;
+  }
+  @keyframes blink { to { background: transparent; } }
+  .term-body:empty::before {
+    content: '$ awaiting run...';
+    color: var(--dim2);
+  }
+
+  /* ── RESULTS ── */
+  .results {
+    display: flex; flex-direction: column; gap: 10px;
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+  .results:empty::before {
+    content: 'No results yet — run the step above';
+    color: var(--dim2);
+    font-size: 11px;
+    font-style: italic;
+    padding: 6px 0;
+  }
+  .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .result-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .result-card h4 {
+    margin: 0 0 8px;
+    font-size: 10px; color: var(--dim);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .result-card img {
+    width: 100%; border-radius: 4px;
+    border: 1px solid var(--border); display: block;
+  }
+  .result-card a.dl {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #1f1f1f;
+    border: 1px solid var(--border2);
+    color: var(--fg);
+    border-radius: 4px;
+    font-size: 12px;
+    text-decoration: none;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .result-card a.dl:hover { background: #262626; }
+  .live-frame {
+    width: 100%; height: 420px;
+    background: #000;
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+  }
+  .live-link {
+    font-size: 11px; color: var(--dim);
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    word-break: break-all;
+  }
+  .live-link a { color: var(--blue); text-decoration: none; }
+
+  /* ── STEP INPUTS ── */
+  .step-inputs {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    padding: 10px 14px;
+    background: #121212;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .step-input { display: flex; flex-direction: column; gap: 3px; min-width: 180px; flex: 1; }
+  .step-input.wide { flex-basis: 100%; }
+  .step-input label {
+    font-size: 10px; color: var(--dim);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .step-input input,
+  .step-input textarea {
+    background: #0c0c0c;
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    color: var(--fg);
+    padding: 6px 9px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .step-input textarea {
+    resize: vertical;
+    min-height: 80px;
+    max-height: 260px;
+    line-height: 1.4;
+  }
+  .step-input input:focus,
+  .step-input textarea:focus { outline: none; border-color: var(--accent); }
+  .step-input .aux-btn {
+    align-self: flex-start;
+    margin-top: 4px;
+    background: #1a1a1a;
+    border: 1px solid var(--border2);
+    color: var(--accent);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+  .step-input .aux-btn:hover:not(:disabled) { background: #222; }
+  .step-input .aux-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── PROFILE TABLE (step 5) ── */
+  .profile-table {
+    width: 100%; border-collapse: collapse;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .profile-table th, .profile-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+  .profile-table th { color: var(--dim); font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .profile-table td { color: var(--fg); }
+  .profile-table tr.target td { color: var(--accent); }
+  .empty-state { color: var(--dim); font-size: 12px; padding: 12px 0; }
+
+  /* ── JSON BLOCK (steps 8 + 9) ── */
+  .json-block {
+    background: #0c0c0c;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #cfc290;
+    max-height: 320px;
+    overflow: auto;
+    white-space: pre;
+  }
+  .domain-list { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .domain-list .d { color: var(--fg); }
+  .domain-list .n { color: var(--dim); text-align: right; }
+
+  /* ── RUN BUTTON ── */
+  .run-btn {
+    background: var(--accent);
+    color: #000; border: none;
+    padding: 7px 18px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; letter-spacing: 0.02em;
+  }
+  .run-btn:hover:not(:disabled) { background: #ffd078; }
+  .run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── DEV DRAWER (removable) ── */
+  .dev-drawer {
+    position: fixed; bottom: 0; right: 0;
+    width: 640px; max-width: 92vw;
+    background: #1a1500;
+    border: 1px solid #4a3a00; border-bottom: none; border-right: none;
+    border-top-left-radius: 8px;
+    box-shadow: 0 -8px 24px rgba(0,0,0,0.5);
+    z-index: 50;
+    transform: translateY(calc(100% - 30px));
+    transition: transform 0.2s;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+  .dev-drawer.open { transform: translateY(0); }
+  .dev-handle {
+    padding: 7px 14px;
+    color: var(--accent);
+    font-weight: 600; letter-spacing: 0.06em;
+    cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    user-select: none;
+  }
+  .dev-content { padding: 0 14px 14px; max-height: 50vh; overflow-y: auto; }
+  .dev-config {
+    display: grid; grid-template-columns: max-content 1fr;
+    gap: 4px 16px; color: #d4c79a; margin-bottom: 10px;
+  }
+  .dev-config dt { color: #8a7d50; }
+  .dev-config dd { margin: 0; word-break: break-all; }
+  .dev-config .ok  { color: var(--green); }
+  .dev-config .bad { color: var(--red); }
+  .dev-log {
+    background: #0d0a00;
+    border: 1px solid #2a2200;
+    border-radius: 4px;
+    padding: 8px 10px;
+    max-height: 220px; overflow-y: auto;
+    color: #cfc290;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .dev-log .entry { display: block; }
+  .dev-log .entry .ts  { color: #6a5d30; margin-right: 8px; }
+  .dev-log .entry.req  { color: #9ec5ff; }
+  .dev-log .entry.res  { color: var(--accent); }
+  .dev-log .entry.res.bad { color: var(--red); }
+  .dev-log .entry.body { color: #d4c79a; opacity: 0.9; }
+  .dev-log .entry.note { color: #888; }
+
+  /* ── CONFIG SECTION (sidebar) ── */
+  .config-section {
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .config-toggle {
+    padding: 8px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer;
+    font-size: 10px; font-weight: 600;
+    color: var(--dim);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    user-select: none;
+  }
+  .config-toggle:hover { color: var(--fg); }
+  .config-fields {
+    padding: 2px 12px 12px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .config-fields .step-input { min-width: 0; }
+  .config-fields .step-input input {
+    width: 100%; font-size: 11px; padding: 5px 8px;
+  }
+  .config-section.collapsed .config-fields { display: none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <header>
+      <div class="brand">Browserless</div>
+      <div class="sub">Authenticated Profiles</div>
+    </header>
+    <div class="config-section" id="config-section">
+      <div class="config-toggle" id="config-toggle">
+        <span>Config</span>
+        <span id="config-chevron">▾</span>
+      </div>
+      <div class="config-fields">
+        <div class="step-input">
+          <label>API Token</label>
+          <input type="password" id="cfg-token" placeholder="your-browserless-token" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="step-input">
+          <label>Profile Name</label>
+          <input type="text" id="cfg-profile" placeholder="my-profile" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="step-input">
+          <label>Login URL</label>
+          <input type="text" id="cfg-login-url" placeholder="https://app.example.com/login" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="step-input">
+          <label>Dashboard URL</label>
+          <input type="text" id="cfg-dashboard-url" placeholder="https://app.example.com/dashboard" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="step-input">
+          <label>Base URL</label>
+          <input type="text" id="cfg-base" placeholder="https://production-sfo.browserless.io" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+    </div>
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="1">
+        <span class="num">1</span>
+        <span class="label">Create Browser</span>
+        <span class="status"></span>
+      </button>
+      <button class="tab" data-tab="2">
+        <span class="num">2</span>
+        <span class="label">Authenticate</span>
+        <span class="status"></span>
+      </button>
+      <button class="tab" data-tab="3">
+        <span class="num">3</span>
+        <span class="label">Save Profile</span>
+        <span class="status"></span>
+      </button>
+      <button class="tab" data-tab="4">
+        <span class="num">4</span>
+        <span class="label">Reuse Profile</span>
+        <span class="status"></span>
+      </button>
+      <button class="tab" data-tab="5">
+        <span class="num">5</span>
+        <span class="label">List Profiles</span>
+        <span class="status"></span>
+      </button>
+      <button class="tab" data-tab="6">
+        <span class="num">6</span>
+        <span class="label">Rename Profile</span>
+        <span class="status"></span>
+      </button>
+      <button class="tab" data-tab="7">
+        <span class="num">7</span>
+        <span class="label">Inspect Profile</span>
+        <span class="status"></span>
+      </button>
+      <button class="tab" data-tab="8">
+        <span class="num">8</span>
+        <span class="label">Export State</span>
+        <span class="status"></span>
+      </button>
+      <button class="tab" data-tab="9">
+        <span class="num">9</span>
+        <span class="label">Upload State</span>
+        <span class="status"></span>
+      </button>
+      <button class="tab" data-tab="10">
+        <span class="num">10</span>
+        <span class="label">Refresh State</span>
+        <span class="status"></span>
+      </button>
+      <button class="tab" data-tab="12">
+        <span class="num">12</span>
+        <span class="label">Delete Profile</span>
+        <span class="status"></span>
+      </button>
+    </div>
+    <div class="sidebar-footer">
+      <span>v0.1 · demo</span>
+      <button id="reset-btn">Reset</button>
+    </div>
+  </aside>
+
+  <!-- ── CODE PANEL ── -->
+  <section class="panel">
+    <div class="panel-header">
+      <span class="panel-label">Code · educational excerpt</span>
+    </div>
+    <div class="mac flex">
+      <div class="mac-titlebar">
+        <div class="mac-dots">
+          <span class="mac-dot red"></span>
+          <span class="mac-dot yellow"></span>
+          <span class="mac-dot green"></span>
+        </div>
+        <div class="mac-title" id="code-title">step1-create-browser.js</div>
+      </div>
+      <div class="sub-tabs" id="sub-tabs" style="display:none"></div>
+      <div class="mac-body">
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TERMINAL PANEL ── -->
+  <section class="panel">
+    <div class="panel-header">
+      <span class="panel-label">Terminal · live output</span>
+      <div class="panel-actions" id="panel-actions">
+        <button class="run-btn" id="run-btn">▶ Run step</button>
+      </div>
+    </div>
+    <div class="step-inputs" id="step-inputs" style="display:none"></div>
+    <!-- Single-step view -->
+    <div class="mac flex" id="single-term-wrap">
+      <div class="mac-titlebar">
+        <div class="mac-dots">
+          <span class="mac-dot red"></span>
+          <span class="mac-dot yellow"></span>
+          <span class="mac-dot green"></span>
+        </div>
+        <div class="mac-title" id="term-title">~/authprofiles — node</div>
+      </div>
+      <div class="term-body" id="term"></div>
+    </div>
+    <div class="results" id="results"></div>
+    <!-- Multi-step view (step 4) -->
+    <div class="term-stack" id="term-stack" style="display:none"></div>
+  </section>
+</div>
+
+<!-- ── DEV DRAWER (remove this whole block to remove the panel) ── -->
+<div class="dev-drawer" id="dev-drawer">
+  <div class="dev-handle" id="dev-handle">
+    <span>DEV · debug</span>
+    <span id="dev-toggle-icon">▲</span>
+  </div>
+  <div class="dev-content">
+    <dl class="dev-config" id="dev-config"><dt>loading…</dt><dd></dd></dl>
+    <div class="dev-log" id="dev-log"></div>
+  </div>
+</div>
+
+<script>
+// ──────────────────────────────────────────────────────────────────────────
+// STEP DEFINITIONS — code snippets shown in the code panel.
+// These are educational excerpts, NOT the actual server code.
+// ──────────────────────────────────────────────────────────────────────────
+const STEPS = {
+  1: {
+    title: 'step1-create-browser.js',
+    endpoint: '/api/step/create-browser',
+    code:
+`// 1. Launch a Browserless session bound to a profile name
+const res = await fetch(
+  'https://production-sfo.browserless.io/profile?token=' + TOKEN,
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'amplitude-profile' }),
+  }
+);
+const { connect } = await res.json();
+
+// 2. Connect via puppeteer-core
+const browser = await puppeteer.connect({
+  browserWSEndpoint: connect,
+});
+const page = await browser.newPage();`,
+  },
+  2: {
+    title: 'step2-authenticate.js',
+    endpoint: '/api/step/authenticate',
+    code:
+`// 1. Open the page that requires authentication
+await page.goto('https://app.amplitude.com/login');
+
+// 2. Ask Browserless for a LiveURL — a shareable,
+//    fully interactive view of this exact session
+const cdp = await page.createCDPSession();
+const { liveURL } = await cdp.send('Browserless.liveURL');
+
+// 3. Embed liveURL in an iframe — the user logs in
+//    manually; no credentials touch the backend.
+
+// 4. Wait for the dashboard to load
+await page.waitForSelector('#onenav-scroll-container', { timeout: 300000 });
+
+// 5. Brief pause, then show a success overlay
+await new Promise((r) => setTimeout(r, 5000));
+// overlay injected via page.evaluate — "Login successful, closing browser"`,
+  },
+  3: {
+    title: 'step3-save-profile.js',
+    endpoint: '/api/step/save-profile',
+    code:
+`// 1. Persist cookies + localStorage into the named profile
+const cdp = await page.createCDPSession();
+const result = await cdp.send('Browserless.saveProfile', {
+  name: 'amplitude-profile',
+});
+// → { ok: true, cookieCount: N, originCount: N }
+
+// 2. Close the creation session — we're done
+await browser.close();`,
+  },
+  4: {
+    title: 'step4-reuse-profile.js',
+    multi: true,
+    subSteps: {
+      screenshot: {
+        label: 'Screenshot · REST',
+        endpoint: '/api/step/reuse-screenshot',
+        title: 'reuse-screenshot.js',
+        code:
+`// DASHBOARD_URL      = 'https://app.amplitude.com/.../chart/1p2dl2to'
+// DASHBOARD_SELECTOR = '#onenav-scroll-container ... .bg-monochrome-minus5'
+
+// Simple capture → REST /screenshot is enough.
+// Works with any HTTP client — no SDK, no puppeteer.
+const res = await fetch(
+  'https://production-sfo.browserless.io/screenshot' +
+  '?token=' + TOKEN + '&profile=amplitude-profile', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    url: DASHBOARD_URL,
+    options: { type: 'png' },
+    selector: DASHBOARD_SELECTOR,
+    gotoOptions: { waitUntil: 'load' },
+    viewport: { width: 2080, height: 1600 },
+    waitForTimeout: 5000,
+  }),
+});
+const png = await res.arrayBuffer();`,
+      },
+      pdf: {
+        label: 'PDF · puppeteer',
+        endpoint: '/api/step/reuse-pdf',
+        title: 'reuse-pdf.js',
+        code:
+`// DASHBOARD_URL      = 'https://app.amplitude.com/.../chart/1p2dl2to'
+// DASHBOARD_SELECTOR = '#onenav-scroll-container ... .bg-monochrome-minus5'
+// COLLAPSE_MENU      = '#onenav-scroll-container ... > button'
+
+// Need clicks/waits before capture? Drive puppeteer
+// against the same profile via the WebSocket endpoint.
+const browser = await puppeteer.connect({
+  browserWSEndpoint: 'wss://production-sfo.browserless.io/' +
+                     '?token=' + TOKEN +
+                     '&profile=amplitude-profile',
+});
+const page = await browser.newPage();
+await page.setViewport({ width: 2080, height: 1600 });
+await page.goto(DASHBOARD_URL, { waitUntil: 'load' });
+await page.waitForSelector(DASHBOARD_SELECTOR, { timeout: 30000 });
+
+const clickIfPresent = async (sel) => {
+  try {
+    await page.waitForSelector(sel, { timeout: 5000 });
+    await page.click(sel);
+  } catch { /* selector missing — skip */ }
+};
+await clickIfPresent(COLLAPSE_MENU);
+await new Promise(r => setTimeout(r, 8000));
+
+const pdf = await page.pdf({ printBackground: true, landscape: true });
+await browser.close();`,
+      },
+    },
+  },
+  5: {
+    title: 'step5-list-profiles.js',
+    endpoint: '/api/step/list-profiles',
+    code:
+`// List every profile saved on your Browserless account.
+// Endpoint is plural — GET /profiles (NOT /profile).
+const res = await fetch(
+  'https://production-sfo.browserless.io/profiles?token=' + TOKEN +
+  '&limit=100&offset=0'
+);
+const profiles = await res.json();
+// → [{ id, name, cookieCount, originCount,
+//      lastUsedAt, createdAt, updatedAt }, ...]`,
+  },
+  6: {
+    title: 'step6-rename-profile.js',
+    endpoint: '/api/step/rename-profile',
+    inputs: [
+      { name: 'from', label: 'From', default: 'amplitude-profile' },
+      { name: 'to',   label: 'To',   default: 'amplitude-profile-v2' },
+    ],
+    code:
+`// FROM = 'amplitude-profile'
+// TO   = 'amplitude-profile-v2'
+// Native rename: PUT /profile/:name with the new name.
+// Returns the updated profile metadata.
+const res = await fetch(
+  'https://production-sfo.browserless.io/profile/' + FROM +
+  '?token=' + TOKEN,
+  {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: TO }),
+  }
+);
+const profile = await res.json();
+// → { id, name: TO, cookieCount, originCount,
+//     lastUsedAt, createdAt, updatedAt }
+
+// Errors:
+//   404 — source profile not found
+//   400 — target name already taken`,
+  },
+  12: {
+    title: 'step12-delete-profile.js',
+    endpoint: '/api/step/delete-profile',
+    inputs: [
+      { name: 'name', label: 'Profile name', default: 'amplitude-profile' },
+    ],
+    code:
+`// NAME = 'amplitude-profile'
+// Permanently remove a saved profile.
+const res = await fetch(
+  'https://production-sfo.browserless.io/profile/' + NAME +
+  '?token=' + TOKEN,
+  { method: 'DELETE' }
+);
+// → 200/204 on success; 404 if the profile never existed.`,
+  },
+  7: {
+    title: 'step7-inspect-profile.js',
+    endpoint: '/api/step/inspect-profile',
+    inputs: [
+      { name: 'name', label: 'Profile name', default: 'amplitude-profile' },
+    ],
+    code:
+`// NAME = 'amplitude-profile'
+// GET /profile/:name returns metadata for a single profile.
+const r = await fetch(
+  'https://production-sfo.browserless.io/profile/' + NAME +
+  '?token=' + TOKEN
+);
+if (r.ok) {
+  const profile = await r.json();
+  // → { id, name, cookieCount, originCount,
+  //     lastUsedAt, createdAt, updatedAt }
+}
+
+// (Fallback: list all + filter locally, useful if you only
+// have an old name or want to bulk-inspect.)
+const all = await fetch(
+  'https://production-sfo.browserless.io/profiles?token=' + TOKEN
+).then(r => r.json());
+const profile = all.find(p => p.name === NAME);`,
+  },
+  8: {
+    title: 'step8-export-profile-state.js',
+    endpoint: '/api/step/export-profile',
+    inputs: [
+      { name: 'name', label: 'Profile name', default: 'amplitude-profile' },
+    ],
+    code:
+`// NAME = 'amplitude-profile'
+// Connect to the saved profile so Browserless hydrates it,
+// then dump cookies via CDP.
+const browser = await puppeteer.connect({
+  browserWSEndpoint:
+    'wss://production-sfo.browserless.io/' +
+    '?token=' + TOKEN + '&profile=' + NAME,
+});
+const page = await browser.newPage();
+await page.goto('about:blank');
+
+const cdp = await page.createCDPSession();
+const { cookies } = await cdp.send('Network.getAllCookies');
+await browser.close();
+
+// cookies → [{ name, value, domain, path, secure, ... }, ...]`,
+  },
+  9: {
+    title: 'step9-upload-profile.js',
+    endpoint: '/api/step/upload-profile',
+    inputs: [
+      { name: 'name',  label: 'New profile name', default: 'amplitude-imported' },
+      { name: 'state', label: 'State JSON (cookies + origins)',
+        default: '{\n  "cookies": [],\n  "origins": []\n}',
+        type: 'textarea', loadFromExport: true },
+    ],
+    code:
+`// NAME = 'amplitude-imported'
+// Create a brand-new profile by importing cookies + origins
+// directly — no login flow required. Useful for porting state
+// from another tool, or restoring an exported profile.
+const res = await fetch(
+  'https://production-sfo.browserless.io/profile/upload?token=' + TOKEN,
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: NAME,
+      state: { cookies: [...], origins: [...] },
+    }),
+  }
+);
+const profile = await res.json();
+// → { id, name, cookieCount, originCount, ..., diagnostics:
+//     { skippedMalformedCookies, skippedPrivateCookies,
+//       skippedMalformedOrigins, truncatedOrigins, ... } }
+
+// Errors:
+//   400 — profile name already exists`,
+  },
+  10: {
+    title: 'step10-refresh-profile.js',
+    endpoint: '/api/step/refresh-profile',
+    inputs: [
+      { name: 'name',  label: 'Existing profile name', default: 'amplitude-profile' },
+      { name: 'state', label: 'New state JSON (replaces saved state)',
+        default: '{\n  "cookies": [],\n  "origins": []\n}',
+        type: 'textarea', loadFromExport: true },
+    ],
+    code:
+`// NAME = 'amplitude-profile'
+// Overwrite the saved state of an EXISTING profile in place.
+// Same body shape as /profile/upload, but the profile keeps
+// its id and createdAt — only state + updatedAt change.
+const res = await fetch(
+  'https://production-sfo.browserless.io/profile/refresh?token=' + TOKEN,
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: NAME,
+      state: { cookies: [...], origins: [...] },
+    }),
+  }
+);
+const profile = await res.json();
+// → updated profile metadata + diagnostics
+
+// Errors:
+//   404 — profile not found`,
+  },
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// STATE
+// ──────────────────────────────────────────────────────────────────────────
+let activeTab = 1;
+const STEP_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12];
+const tabState = Object.fromEntries(STEP_IDS.map(id => [id, {}]));
+
+// Step 4 lives in multi-mode: each sub-step has its own terminal that
+// can run concurrently with the others. Init the children when the
+// step is first touched.
+function ensureMultiState(stepId) {
+  const step = STEPS[stepId];
+  if (!step.multi) return null;
+  const st = tabState[stepId];
+  if (!st.children) {
+    st.children = {};
+    for (const key of Object.keys(step.subSteps)) {
+      st.children[key] = { lines: [], highlights: new Set(), resultsHtml: '', running: false, status: null };
+    }
+    st.activeSubTab = Object.keys(step.subSteps)[0];
+  }
+  return st;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Tiny JS syntax tokenizer — good enough for these snippets
+// ──────────────────────────────────────────────────────────────────────────
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+const KEYWORDS = new Set(['const','let','var','await','async','function','return','new','if','else','for','while','of','in','from','import','export','default','class','this','try','catch','throw']);
+const LITERALS = new Set(['true','false','null','undefined']);
+function highlightJS(line) {
+  // peel off a line comment if present and not inside a string
+  let codePart = line, comment = '';
+  let q = null;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (q) {
+      if (c === '\\') { i++; continue; }
+      if (c === q) q = null;
+    } else {
+      if (c === '"' || c === "'" || c === '`') q = c;
+      else if (c === '/' && line[i+1] === '/') { codePart = line.slice(0, i); comment = line.slice(i); break; }
+    }
+  }
+  let out = '', i = 0;
+  while (i < codePart.length) {
+    const c = codePart[i];
+    if (c === '"' || c === "'" || c === '`') {
+      const quote = c;
+      let j = i + 1;
+      while (j < codePart.length && codePart[j] !== quote) {
+        if (codePart[j] === '\\') j++;
+        j++;
+      }
+      out += '<span class="tok-str">' + escapeHtml(codePart.slice(i, j + 1)) + '</span>';
+      i = j + 1; continue;
+    }
+    if (/[0-9]/.test(c) && (i === 0 || !/[a-zA-Z_$]/.test(codePart[i-1]))) {
+      let j = i;
+      while (j < codePart.length && /[0-9.]/.test(codePart[j])) j++;
+      out += '<span class="tok-num">' + escapeHtml(codePart.slice(i, j)) + '</span>';
+      i = j; continue;
+    }
+    if (/[a-zA-Z_$]/.test(c)) {
+      let j = i;
+      while (j < codePart.length && /[a-zA-Z0-9_$]/.test(codePart[j])) j++;
+      const word = codePart.slice(i, j);
+      if (KEYWORDS.has(word))      out += '<span class="tok-key">'  + word + '</span>';
+      else if (LITERALS.has(word)) out += '<span class="tok-bool">' + word + '</span>';
+      else if (codePart[j] === '(') out += '<span class="tok-fn">'   + escapeHtml(word) + '</span>';
+      else                          out += escapeHtml(word);
+      i = j; continue;
+    }
+    out += escapeHtml(c);
+    i++;
+  }
+  if (comment) out += '<span class="tok-cmt">' + escapeHtml(comment) + '</span>';
+  return out;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// STATE ROUTING — multi-mode redirects writes to children[subTabId]
+// ──────────────────────────────────────────────────────────────────────────
+function subStateOf(stepId, subTabId) {
+  if (!subTabId) return tabState[stepId];
+  return tabState[stepId].children[subTabId];
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// CODE PANEL
+// ──────────────────────────────────────────────────────────────────────────
+function renderCode(stepId) {
+  const step = STEPS[stepId];
+  const titleEl = document.getElementById('code-title');
+  const subTabsEl = document.getElementById('sub-tabs');
+  const codeEl = document.getElementById('code');
+
+  let code, hl;
+  if (step.multi) {
+    ensureMultiState(stepId);
+    const subTabId = tabState[stepId].activeSubTab;
+    const sub = step.subSteps[subTabId];
+    titleEl.textContent = sub.title;
+    subTabsEl.style.display = '';
+    subTabsEl.innerHTML = Object.entries(step.subSteps).map(([id, ss]) => {
+      const cls = 'sub-tab' + (id === subTabId ? ' active' : '');
+      return `<button class="${cls}" data-sub-tab="${id}">${escapeHtml(ss.label)}</button>`;
+    }).join('');
+    subTabsEl.querySelectorAll('[data-sub-tab]').forEach(el => {
+      el.addEventListener('click', () => {
+        tabState[stepId].activeSubTab = el.dataset.subTab;
+        renderCode(stepId);
+      });
+    });
+    code = sub.code;
+    hl = tabState[stepId].children[subTabId].highlights || new Set();
+  } else {
+    subTabsEl.style.display = 'none';
+    titleEl.textContent = step.title;
+    code = step.code;
+    hl = tabState[stepId].highlights || new Set();
+  }
+
+  const lines = code.split('\n');
+  codeEl.innerHTML = lines.map((line, idx) => {
+    const lineNum = idx + 1;
+    const cls = 'code-line' + (hl.has(lineNum) ? ' highlight' : '');
+    return `<div class="${cls}"><span class="code-ln">${lineNum}</span><span class="code-src">${highlightJS(line) || ' '}</span></div>`;
+  }).join('');
+}
+
+function setHighlight(stepId, range, subTabId = null) {
+  const [from, to] = String(range).split('-').map(Number);
+  const set = new Set();
+  for (let i = from; i <= (to || from); i++) set.add(i);
+  subStateOf(stepId, subTabId).highlights = set;
+  if (stepId !== activeTab) return;
+  // For multi: only repaint when the highlighted sub-step is the active one.
+  if (STEPS[stepId].multi) {
+    if (subTabId === tabState[stepId].activeSubTab) renderCode(stepId);
+  } else {
+    renderCode(stepId);
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// TERMINAL
+// ──────────────────────────────────────────────────────────────────────────
+function termAppend(stepId, type, message, subTabId = null) {
+  const st = subStateOf(stepId, subTabId);
+  if (!st.lines) st.lines = [];
+  st.lines.push({ type, message });
+  if (stepId !== activeTab) return;
+  if (STEPS[stepId].multi) renderTermStack(stepId);
+  else renderTerm(stepId);
+}
+function renderTerm(stepId) {
+  const term = document.getElementById('term');
+  const lines = tabState[stepId].lines || [];
+  const html = lines.map(({ type, message }) => {
+    const marker = type === 'success' ? '✓' : type === 'error' ? '✗' : type === 'note' ? '·' : '›';
+    return `<span class="term-line ${type}"><span class="marker">${marker}</span>${escapeHtml(message)}</span>`;
+  }).join('');
+  term.innerHTML = html + (tabState[stepId].running ? '<span class="term-cursor"></span>' : '');
+  term.scrollTop = term.scrollHeight;
+}
+function renderTermStack(stepId) {
+  const step = STEPS[stepId];
+  const stack = document.getElementById('term-stack');
+  const children = tabState[stepId].children;
+  const active = Object.entries(children)
+    .filter(([_, c]) => c.lines?.length || c.running || c.resultsHtml)
+    .sort((a, b) => (a[1].startedAt || 0) - (b[1].startedAt || 0));
+  if (!active.length) {
+    stack.innerHTML = `<div class="empty-state" style="padding:20px;">Click a Run button to start a session. Run both for concurrent terminals.</div>`;
+    return;
+  }
+  stack.innerHTML = active.map(([id, c]) => {
+    const sub = step.subSteps[id];
+    const statusLabel = c.running ? '· running' : c.status === 'success' ? '· done' : c.status === 'error' ? '· error' : '';
+    const linesHtml = (c.lines || []).map(({ type, message }) => {
+      const marker = type === 'success' ? '✓' : type === 'error' ? '✗' : type === 'note' ? '·' : '›';
+      return `<span class="term-line ${type}"><span class="marker">${marker}</span>${escapeHtml(message)}</span>`;
+    }).join('');
+    const cursor = c.running ? '<span class="term-cursor"></span>' : '';
+    return `
+      <div class="term-card" data-sub="${id}">
+        <div class="mac-titlebar">
+          <div class="mac-dots">
+            <span class="mac-dot red"></span>
+            <span class="mac-dot yellow"></span>
+            <span class="mac-dot green"></span>
+          </div>
+          <div class="mac-title">${escapeHtml(sub.label)} ${statusLabel}</div>
+        </div>
+        <div class="term-body">${linesHtml}${cursor}</div>
+        <div class="results">${c.resultsHtml || ''}</div>
+      </div>
+    `;
+  }).join('');
+  // Auto-scroll each term body to bottom
+  stack.querySelectorAll('.term-body').forEach(tb => { tb.scrollTop = tb.scrollHeight; });
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// RESULTS
+// ──────────────────────────────────────────────────────────────────────────
+function clearResults(stepId, subTabId = null) {
+  subStateOf(stepId, subTabId).resultsHtml = '';
+  if (stepId !== activeTab) return;
+  if (STEPS[stepId].multi) renderTermStack(stepId);
+  else renderResults(stepId);
+}
+function appendResult(stepId, html, subTabId = null) {
+  const st = subStateOf(stepId, subTabId);
+  st.resultsHtml = (st.resultsHtml || '') + html;
+  if (stepId !== activeTab) return;
+  if (STEPS[stepId].multi) renderTermStack(stepId);
+  else renderResults(stepId);
+}
+function renderResults(stepId) {
+  document.getElementById('results').innerHTML = tabState[stepId].resultsHtml || '';
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// TAB STATUS DOTS
+// ──────────────────────────────────────────────────────────────────────────
+function setTabStatus(stepId, status) {
+  const tab = document.querySelector(`.tab[data-tab="${stepId}"]`);
+  if (!tab) return;
+  if (status) tab.setAttribute('data-status', status);
+  else        tab.removeAttribute('data-status');
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// STREAMING RUNNER
+// ──────────────────────────────────────────────────────────────────────────
+async function runStep(stepId, subTabId = null) {
+  const step = STEPS[stepId];
+  if (step.multi && !subTabId) subTabId = tabState[stepId].activeSubTab;
+  const st = subStateOf(stepId, subTabId);
+
+  st.lines = [];
+  st.highlights = new Set();
+  st.resultsHtml = '';
+  st.screenshotHtml = '';
+  st.pdfHtml = '';
+  st.running = true;
+  st.status = null;
+  st.startedAt = Date.now();
+
+  setTabStatus(stepId, 'running');
+  setRunDisabled(stepId, subTabId, true);
+  if (stepId === activeTab) {
+    renderCode(stepId);
+    if (step.multi) renderTermStack(stepId);
+    else { renderTerm(stepId); renderResults(stepId); }
+  }
+
+  const endpoint = subTabId ? step.subSteps[subTabId].endpoint : step.endpoint;
+  const stepInputs = subTabId ? {} : (collectInputs(stepId) || {});
+  const body = { ...collectConfig(), ...stepInputs };
+  devAppend('note', `POST ${endpoint} ${JSON.stringify(body)}`);
+
+  let hadError = false;
+  try {
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf('\n\n')) !== -1) {
+        const raw = buf.slice(0, idx);
+        buf = buf.slice(idx + 2);
+        const payload = raw.startsWith('data:') ? raw.slice(5).trim() : raw.trim();
+        if (!payload) continue;
+        let parsed;
+        try { parsed = JSON.parse(payload); } catch { continue; }
+        handleEvent(stepId, parsed, subTabId);
+        if (parsed.type === 'error') hadError = true;
+      }
+    }
+  } catch (err) {
+    termAppend(stepId, 'error', err.message || String(err), subTabId);
+    hadError = true;
+  } finally {
+    st.running = false;
+    st.status = hadError ? 'error' : 'success';
+    setTabStatus(stepId, hadError ? 'error' : 'success');
+    setRunDisabled(stepId, subTabId, false);
+    if (stepId === activeTab) {
+      if (step.multi) renderTermStack(stepId);
+      else renderTerm(stepId);
+    }
+    devRefresh();
+  }
+}
+
+function setRunDisabled(stepId, subTabId, disabled) {
+  if (STEPS[stepId].multi) {
+    const btn = document.querySelector(`[data-run-sub="${subTabId}"]`);
+    if (btn) btn.disabled = disabled;
+  } else {
+    const btn = document.getElementById('run-btn');
+    if (btn) btn.disabled = disabled;
+  }
+}
+
+function handleEvent(stepId, ev, subTabId = null) {
+  // dev panel routing
+  if (ev.type === 'debug') {
+    const d = ev.data || {};
+    if (d.kind === 'request')       devAppend('req', ev.message);
+    else if (d.kind === 'response') devAppend('res', ev.message, { bad: d.status >= 400 });
+    else                            devAppend('body', ev.message);
+    return;
+  }
+  // code-line highlight
+  if (ev.type === 'highlight') {
+    setHighlight(stepId, ev.message, subTabId);
+    return;
+  }
+  // List of profiles (step 5)
+  if (ev.type === 'profiles') {
+    let arr;
+    try { arr = JSON.parse(ev.message); } catch { arr = []; }
+    appendResult(stepId, renderProfilesTable(arr), subTabId);
+    termAppend(stepId, 'step', `Rendered ${arr.length} profile(s)`, subTabId);
+    return;
+  }
+  // Single profile metadata (steps 6 / 8 / 10 / 11)
+  if (ev.type === 'profile') {
+    let obj;
+    try { obj = JSON.parse(ev.message); } catch { obj = { raw: ev.message }; }
+    const { diagnostics, ...meta } = obj;
+    const diagHtml = diagnostics ? `
+      <div class="result-card">
+        <h4>Diagnostics</h4>
+        <div class="domain-list">
+          ${Object.entries(diagnostics).map(([k, v]) =>
+            `<span class="d">${escapeHtml(k)}</span><span class="n">${escapeHtml(String(v))}</span>`
+          ).join('')}
+        </div>
+      </div>
+    ` : '';
+    appendResult(stepId, `
+      <div class="result-card">
+        <h4>Profile metadata</h4>
+        <div class="json-block">${escapeHtml(JSON.stringify(meta, null, 2))}</div>
+      </div>
+      ${diagHtml}
+    `, subTabId);
+    return;
+  }
+  // Cookie export (step 9)
+  if (ev.type === 'export') {
+    let obj;
+    try { obj = JSON.parse(ev.message); } catch { obj = { cookies: [], byDomain: {} }; }
+    // Stash a state-shaped blob that steps 10/11 can paste straight in.
+    window.__lastExport = JSON.stringify(
+      { cookies: obj.cookies || [], origins: [] },
+      null, 2
+    );
+    const blob = new Blob([JSON.stringify(obj.cookies, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const domains = Object.entries(obj.byDomain || {}).sort((a, b) => b[1] - a[1]);
+    const preview = obj.cookies.slice(0, 12);
+    appendResult(stepId, `
+      <div class="result-card">
+        <h4>${obj.cookies.length} cookies · ${domains.length} domains</h4>
+        <div class="domain-list">
+          ${domains.map(([d, n]) => `<span class="d">${escapeHtml(d)}</span><span class="n">${n}</span>`).join('')}
+        </div>
+        <div style="margin-top:10px"><a class="dl" href="${url}" download="cookies.json">⤓ cookies.json (all ${obj.cookies.length})</a></div>
+        <h4 style="margin-top:12px">Preview · first ${preview.length}</h4>
+        <div class="json-block">${escapeHtml(JSON.stringify(preview, null, 2))}</div>
+      </div>
+    `, subTabId);
+    return;
+  }
+  // LiveURL iframe
+  if (ev.type === 'liveurl') {
+    const url = ev.message;
+    appendResult(stepId, `
+      <div class="result-card">
+        <h4>LiveURL — log in here</h4>
+        <iframe class="live-frame" src="${escapeHtml(url)}" allow="clipboard-read; clipboard-write"></iframe>
+        <div class="live-link">↗ <a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(url)}</a></div>
+      </div>
+    `, subTabId);
+    return;
+  }
+  // screenshot / pdf success messages
+  if (ev.type === 'success' && typeof ev.message === 'string') {
+    if (ev.message.startsWith('screenshot:')) {
+      const b64 = ev.message.slice('screenshot:'.length);
+      const kb = Math.round(b64.length * 0.75 / 1024);
+      const blob = b64ToBlob(b64, 'image/png');
+      const url = URL.createObjectURL(blob);
+      appendBinaryCard(stepId, 'screenshot', `
+        <div class="result-card">
+          <h4>Screenshot — ${kb} KB</h4>
+          <a class="dl" href="${url}" download="dashboard.png">⤓ dashboard.png</a>
+        </div>
+      `, subTabId);
+      termAppend(stepId, 'success', `screenshot ready (${kb} KB)`, subTabId);
+      return;
+    }
+    if (ev.message.startsWith('pdf:')) {
+      const b64 = ev.message.slice('pdf:'.length);
+      const kb = Math.round(b64.length * 0.75 / 1024);
+      const blob = b64ToBlob(b64, 'application/pdf');
+      const url = URL.createObjectURL(blob);
+      appendBinaryCard(stepId, 'pdf', `
+        <div class="result-card">
+          <h4>PDF — ${kb} KB</h4>
+          <a class="dl" href="${url}" download="dashboard.pdf">⤓ dashboard.pdf</a>
+        </div>
+      `, subTabId);
+      termAppend(stepId, 'success', `pdf ready (${kb} KB)`, subTabId);
+      return;
+    }
+  }
+  // default: terminal line
+  const t = ev.type === 'success' ? 'success' : ev.type === 'error' ? 'error' : 'step';
+  termAppend(stepId, t, ev.message, subTabId);
+}
+
+// for step 4: render screenshot + pdf cards side-by-side once both arrive
+function appendBinaryCard(stepId, kind, html, subTabId = null) {
+  const st = subStateOf(stepId, subTabId);
+  st[kind + 'Html'] = html;
+  const sh = st.screenshotHtml || '';
+  const pd = st.pdfHtml || '';
+  if (sh && pd) {
+    st.resultsHtml = `<div class="results-grid">${sh}${pd}</div>`;
+  } else {
+    st.resultsHtml = sh + pd;
+  }
+  if (stepId !== activeTab) return;
+  if (STEPS[stepId].multi) renderTermStack(stepId);
+  else renderResults(stepId);
+}
+
+function renderProfilesTable(arr) {
+  if (!arr.length) {
+    return `<div class="result-card"><h4>Profiles</h4><div class="empty-state">No profiles saved on this account.</div></div>`;
+  }
+  // Normalise — items can be plain strings or objects with metadata.
+  const rows = arr.map(p => typeof p === 'string' ? { name: p } : p);
+  const colKeys = ['name', 'cookieCount', 'originCount', 'createdAt', 'updatedAt'];
+  const cols = colKeys.filter(k => rows.some(r => r[k] !== undefined));
+  const head = cols.map(c => `<th>${escapeHtml(c)}</th>`).join('');
+  const body = rows.map(r => {
+    const target = r.name === 'amplitude-profile' ? ' class="target"' : '';
+    return `<tr${target}>${cols.map(c => `<td>${escapeHtml(String(r[c] ?? '—'))}</td>`).join('')}</tr>`;
+  }).join('');
+  return `
+    <div class="result-card">
+      <h4>${arr.length} profile(s)</h4>
+      <table class="profile-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
+    </div>
+  `;
+}
+
+function b64ToBlob(b64, mime) {
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// STEP INPUTS
+// ──────────────────────────────────────────────────────────────────────────
+function renderInputs(stepId) {
+  const host = document.getElementById('step-inputs');
+  const step = STEPS[stepId];
+  const inputs = step.inputs || [];
+  if (!inputs.length) {
+    host.style.display = 'none';
+    host.innerHTML = '';
+    return;
+  }
+  host.style.display = 'flex';
+  // Cache values per tab so they survive tab switches.
+  tabState[stepId].inputValues = tabState[stepId].inputValues || {};
+  const values = tabState[stepId].inputValues;
+  host.innerHTML = inputs.map(inp => {
+    const v = values[inp.name] !== undefined ? values[inp.name] : (inp.default || '');
+    const wide = inp.type === 'textarea' ? ' wide' : '';
+    const loader = inp.loadFromExport
+      ? `<button type="button" class="aux-btn" data-load-export="${escapeHtml(inp.name)}"${window.__lastExport ? '' : ' disabled'}>
+           ↺ Load last export from step 9${window.__lastExport ? '' : ' (run step 9 first)'}
+         </button>`
+      : '';
+    const field = inp.type === 'textarea'
+      ? `<textarea data-input="${escapeHtml(inp.name)}" rows="6" spellcheck="false">${escapeHtml(v)}</textarea>`
+      : `<input data-input="${escapeHtml(inp.name)}" value="${escapeHtml(v)}" autocomplete="off" spellcheck="false">`;
+    return `
+      <div class="step-input${wide}">
+        <label>${escapeHtml(inp.label)}</label>
+        ${field}
+        ${loader}
+      </div>
+    `;
+  }).join('');
+  host.querySelectorAll('[data-input]').forEach(el => {
+    el.addEventListener('input', () => {
+      values[el.dataset.input] = el.value;
+    });
+  });
+  host.querySelectorAll('[data-load-export]').forEach(el => {
+    el.addEventListener('click', () => {
+      if (!window.__lastExport) return;
+      values[el.dataset.loadExport] = window.__lastExport;
+      renderInputs(stepId);
+    });
+  });
+}
+
+function collectInputs(stepId) {
+  const inputs = STEPS[stepId].inputs || [];
+  if (!inputs.length) return null;
+  const values = tabState[stepId].inputValues || {};
+  const body = {};
+  for (const inp of inputs) {
+    body[inp.name] = values[inp.name] !== undefined ? values[inp.name] : (inp.default || '');
+  }
+  return body;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// PANEL ACTIONS — single Run vs. per-sub-step Runs
+// ──────────────────────────────────────────────────────────────────────────
+function renderPanelActions(stepId) {
+  const step = STEPS[stepId];
+  const actions = document.getElementById('panel-actions');
+  if (step.multi) {
+    ensureMultiState(stepId);
+    const children = tabState[stepId].children;
+    actions.innerHTML = '<div class="multi-actions">' +
+      Object.entries(step.subSteps).map(([id, ss]) => {
+        const dis = children[id].running ? ' disabled' : '';
+        return `<button class="run-btn" data-run-sub="${id}"${dis}>▶ ${escapeHtml(ss.label)}</button>`;
+      }).join('') + '</div>';
+    actions.querySelectorAll('[data-run-sub]').forEach(btn => {
+      btn.addEventListener('click', () => runStep(stepId, btn.dataset.runSub));
+    });
+  } else {
+    actions.innerHTML = '<button class="run-btn" id="run-btn">▶ Run step</button>';
+    document.getElementById('run-btn').addEventListener('click', () => runStep(stepId));
+    document.getElementById('run-btn').disabled = !!tabState[stepId].running;
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// TAB SWITCHING
+// ──────────────────────────────────────────────────────────────────────────
+function switchTab(stepId) {
+  activeTab = stepId;
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', Number(t.dataset.tab) === stepId);
+  });
+  const step = STEPS[stepId];
+  const singleWrap = document.getElementById('single-term-wrap');
+  const singleResults = document.getElementById('results');
+  const stack = document.getElementById('term-stack');
+  if (step.multi) {
+    ensureMultiState(stepId);
+    singleWrap.style.display = 'none';
+    singleResults.style.display = 'none';
+    stack.style.display = '';
+    renderTermStack(stepId);
+  } else {
+    singleWrap.style.display = '';
+    singleResults.style.display = '';
+    stack.style.display = 'none';
+    renderTerm(stepId);
+    renderResults(stepId);
+  }
+  renderCode(stepId);
+  renderInputs(stepId);
+  renderPanelActions(stepId);
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => switchTab(Number(tab.dataset.tab)));
+});
+document.getElementById('reset-btn').addEventListener('click', () => {
+  for (const k of STEP_IDS) {
+    tabState[k] = {};
+    setTabStatus(k, null);
+  }
+  switchTab(activeTab);
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// DEV DRAWER
+// ──────────────────────────────────────────────────────────────────────────
+const devLogEl    = document.getElementById('dev-log');
+const devConfigEl = document.getElementById('dev-config');
+const devDrawer   = document.getElementById('dev-drawer');
+const devToggle   = document.getElementById('dev-toggle-icon');
+
+document.getElementById('dev-handle').addEventListener('click', () => {
+  devDrawer.classList.toggle('open');
+  devToggle.textContent = devDrawer.classList.contains('open') ? '▼' : '▲';
+});
+
+function devAppend(kind, text, opts = {}) {
+  const span = document.createElement('span');
+  span.className = 'entry ' + kind + (opts.bad ? ' bad' : '');
+  const ts = new Date().toLocaleTimeString('en-GB', { hour12: false }) + '.' + String(Date.now() % 1000).padStart(3, '0');
+  span.innerHTML = '<span class="ts">' + ts + '</span>';
+  span.appendChild(document.createTextNode(text));
+  devLogEl.appendChild(span);
+  devLogEl.scrollTop = devLogEl.scrollHeight;
+}
+
+function devRenderConfig(cfg) {
+  const rows = [
+    ['base',         cfg.base, cfg.base ? 'ok' : 'bad'],
+    ['token',        cfg.tokenPreview + (cfg.tokenLength ? '' : ' (MISSING)'), cfg.tokenLength ? 'ok' : 'bad'],
+    ['profile',      cfg.profileName, 'ok'],
+    ['dashboardUrl', cfg.dashboardUrl, cfg.dashboardUrl && cfg.dashboardUrl.startsWith('[PLACEHOLDER') ? 'bad' : 'ok'],
+    ['session',      cfg.sessionActive ? 'active' : 'idle', cfg.sessionActive ? 'ok' : ''],
+    ['node',         cfg.node, 'ok'],
+  ];
+  devConfigEl.innerHTML = rows.map(([k, v, cls]) =>
+    `<dt>${k}</dt><dd class="${cls}">${escapeHtml(String(v))}</dd>`
+  ).join('');
+}
+
+async function devRefresh() {
+  try {
+    const r = await fetch('/api/debug');
+    const cfg = await r.json();
+    devRenderConfig(cfg);
+  } catch (err) {
+    devConfigEl.innerHTML = '<dt>error</dt><dd class="bad">' + escapeHtml(err.message) + '</dd>';
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// CONFIG PANEL
+// ──────────────────────────────────────────────────────────────────────────
+const CONFIG_STORAGE_KEY = 'bl_demo_cfg';
+
+function collectConfig() {
+  return {
+    token:        document.getElementById('cfg-token').value.trim(),
+    base:         document.getElementById('cfg-base').value.trim(),
+    profileName:  document.getElementById('cfg-profile').value.trim(),
+    loginUrl:     document.getElementById('cfg-login-url').value.trim(),
+    dashboardUrl: document.getElementById('cfg-dashboard-url').value.trim(),
+  };
+}
+
+function saveConfig() {
+  try { localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(collectConfig())); } catch {}
+}
+
+function loadConfig() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CONFIG_STORAGE_KEY) || '{}');
+    if (saved.token)        document.getElementById('cfg-token').value        = saved.token;
+    if (saved.base)         document.getElementById('cfg-base').value         = saved.base;
+    if (saved.profileName)  document.getElementById('cfg-profile').value      = saved.profileName;
+    if (saved.loginUrl)     document.getElementById('cfg-login-url').value    = saved.loginUrl;
+    if (saved.dashboardUrl) document.getElementById('cfg-dashboard-url').value = saved.dashboardUrl;
+  } catch {}
+}
+
+// Persist on every keystroke
+document.querySelectorAll('#cfg-token,#cfg-base,#cfg-profile,#cfg-login-url,#cfg-dashboard-url')
+  .forEach(el => el.addEventListener('input', saveConfig));
+
+// Collapse toggle
+document.getElementById('config-toggle').addEventListener('click', () => {
+  const section = document.getElementById('config-section');
+  const chevron = document.getElementById('config-chevron');
+  section.classList.toggle('collapsed');
+  chevron.textContent = section.classList.contains('collapsed') ? '▸' : '▾';
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// INIT
+// ──────────────────────────────────────────────────────────────────────────
+switchTab(1);
+loadConfig();
+devRefresh();
+</script>
+</body>
+</html>
