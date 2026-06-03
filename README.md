@@ -10,13 +10,14 @@ Source code to accompany our YouTube video series. Find the script mentioned in 
 
 ## Videos & Scripts
 
-| Video | Folder |
-|-------|--------|
-| Handling 2FA with Browserless LiveURL | [`hybrid-2fa/`](./hybrid-2fa) |
-| Persisting State — Session Management | [`persisting-state/`](./persisting-state) |
-| Standard Sessions — Session Management | [`standard-sessions/`](./standard-sessions) |
-| Web Scraping with Browserless | [`webscraping/`](./webscraping) |
-| Solving CAPTCHAs with Puppeteer & Playwright | [`SolveCaptchaPuppeteerPlaywright/`](./SolveCaptchaPuppeteerPlaywright) |
+| Video | Folder | Endpoints |
+|-------|--------|-----------|
+| Handling 2FA with Browserless LiveURL | [`hybrid-2fa/`](./hybrid-2fa) | LiveURL |
+| Persisting State — Session Management | [`persisting-state/`](./persisting-state) | Sessions |
+| Standard Sessions — Session Management | [`standard-sessions/`](./standard-sessions) | Sessions |
+| Web Scraping with Browserless | [`webscraping/`](./webscraping) | `/content`, `/scrape`, `/smart-scrape`, `/unblock` |
+| Solving CAPTCHAs with Puppeteer & Playwright | [`SolveCaptchaPuppeteerPlaywright/`](./SolveCaptchaPuppeteerPlaywright) | `/unblock` (solveCaptchas) |
+| Crawl, Search & Map with Browserless | [`crawl-search-map/`](./crawl-search-map) | `/crawl`, `/search`, `/map` |
 
 ## Prerequisites
 

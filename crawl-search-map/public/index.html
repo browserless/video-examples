@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browserless Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #080d18;
+      --surface:   #0f1724;
+      --surface2:  #162033;
+      --border:    #1c2d47;
+      --border2:   #243654;
+      --text:      #e4ecf7;
+      --muted:     #5e7a9e;
+      --accent:    #3b82f6;
+      --green:     #22c55e;
+      --red:       #ef4444;
+      --yellow:    #f59e0b;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── Nav ──────────────────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 24px; height: 52px;
+    }
+    .nav-brand { font-weight: 700; font-size: 15px; letter-spacing: -.01em; }
+    .nav-sep   { color: var(--muted); }
+    .nav-spacer{ flex: 1; }
+
+    .tab {
+      padding: 6px 14px; border-radius: 6px; border: none;
+      background: none; color: var(--muted);
+      font-size: 14px; font-family: inherit;
+      cursor: pointer; transition: all .15s;
+    }
+    .tab:hover    { color: var(--text); background: var(--surface2); }
+    .tab.active   { background: var(--accent); color: #fff; font-weight: 600; }
+    .tab.disabled { opacity: .35; cursor: not-allowed; }
+    .soon {
+      font-size: 10px; background: var(--surface2); color: var(--muted);
+      padding: 1px 5px; border-radius: 4px; margin-left: 4px;
+    }
+
+    /* ── Layout ───────────────────────────────────────────────────────── */
+    main { max-width: 1300px; margin: 0 auto; padding: 28px 24px; }
+    .app-layout { display: flex; gap: 20px; align-items: flex-start; }
+    .app-main   { flex: 1; min-width: 0; }
+    .app-terminal {
+      width: 420px; flex-shrink: 0;
+      position: sticky; top: 64px;
+      max-height: calc(100vh - 80px);
+      display: flex; flex-direction: column;
+    }
+
+    /* ── IDE editor panel ─────────────────────────────────────────────── */
+    .ide-wrap {
+      background: #0d1117;
+      border: 1px solid #1c2d47;
+      border-radius: 12px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .ide-titlebar {
+      display: flex; align-items: stretch;
+      background: #161b22; border-bottom: 1px solid #1c2333;
+      height: 36px; flex-shrink: 0;
+    }
+    .ide-tabs { display: flex; flex: 1; overflow: hidden; }
+    .ide-tab {
+      display: flex; align-items: center; gap: 7px;
+      padding: 0 14px; height: 100%;
+      border-right: 1px solid #1c2333;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; color: #c9d1d9;
+      background: #0d1117; white-space: nowrap;
+    }
+    .ide-tab-icon { color: #e8c468; font-size: 9px; font-weight: 800; letter-spacing: -.5px; }
+    .ide-tab-dot  { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-left: 2px; }
+    .ide-statusbar {
+      padding: 0 12px; display: flex; align-items: center; gap: 8px;
+      font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #3d4b5e;
+    }
+    .ide-lang { margin-left: auto; }
+    .ide-editor-area {
+      display: flex; overflow-y: auto; max-height: 200px;
+    }
+    .ide-editor-area::-webkit-scrollbar { width: 4px; }
+    .ide-editor-area::-webkit-scrollbar-thumb { background: #1c2333; border-radius: 2px; }
+    .ide-gutter {
+      padding: 10px 0; background: #0d1117; min-width: 38px;
+      text-align: right; border-right: 1px solid #1c2333;
+      flex-shrink: 0; user-select: none;
+    }
+    .ide-ln {
+      display: block; padding: 0 10px 0 8px;
+      color: #3d4b5e; font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; line-height: 1.75;
+    }
+    .ide-code {
+      padding: 10px 16px; flex: 1; white-space: pre;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px; line-height: 1.75; overflow-x: auto;
+    }
+    .ide-placeholder { color: #263854; }
+
+    /* ── Terminal panel ───────────────────────────────────────────────── */
+    .terminal-wrap {
+      background: #060b14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      flex: 1; min-height: 0;
+    }
+    .terminal-titlebar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px;
+      background: #0a1020;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .t-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .t-dot-r { background: #ef4444; } .t-dot-y { background: #f59e0b; } .t-dot-g { background: #22c55e; }
+    .terminal-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; color: var(--muted); flex: 1; text-align: center; letter-spacing: .03em;
+    }
+    .terminal-endpoint {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      padding: 2px 8px; border-radius: 4px;
+      background: rgba(59,130,246,.12); color: var(--accent);
+      border: 1px solid rgba(59,130,246,.25); white-space: nowrap;
+    }
+    .terminal-body {
+      padding: 16px 18px;
+      overflow-y: auto;
+      flex: 1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px; line-height: 1.75;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .terminal-body::-webkit-scrollbar { width: 4px; }
+    .terminal-body::-webkit-scrollbar-track { background: transparent; }
+    .terminal-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+    .terminal-idle { color: #2a3f5f; font-size: 12px; padding: 8px 0; }
+    .term-clear-btn {
+      padding: 2px 8px; border-radius: 4px; border: 1px solid #1c2d47;
+      background: none; color: #2a4a6b; font-size: 11px; font-family: 'JetBrains Mono', monospace;
+      cursor: pointer; transition: all .15s;
+    }
+    .term-clear-btn:hover { color: var(--muted); border-color: var(--border2); }
+
+    /* token colours */
+    .t-method { color: #67e8f9; font-weight: 700; }
+    .t-path   { color: #e4ecf7; }
+    .t-ver    { color: #2a3f5f; }
+    .t-hk     { color: #a5b4fc; }
+    .t-hv     { color: #86efac; }
+    .t-key    { color: #93c5fd; }
+    .t-str    { color: #86efac; }
+    .t-num    { color: #fb923c; }
+    .t-bool   { color: #f472b6; }
+    .t-null   { color: #475569; }
+    .t-pun    { color: #475569; }
+    .t-comment{ color: #334155; font-style: italic; }
+    .t-ok     { color: #22c55e; font-weight: 700; }
+    .t-err    { color: #ef4444; font-weight: 700; }
+    .t-divider{ border: none; border-top: 1px solid #0f1e35; margin: 12px 0; }
+    .t-blink  { color: #2a4a6b; animation: t-blink 1.1s step-end infinite; }
+    .t-sse    { color: #f59e0b; font-weight: 600; }
+    .t-ts     { color: #1e3352; user-select: none; }
+    .t-ind    { display: inline-block; width: 9ch; }  /* indent to match timestamp width */
+    @keyframes t-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-title { font-size: 15px; font-weight: 700; }
+    .card-body  { padding: 20px; }
+
+    /* ── JSON editor ──────────────────────────────────────────────────── */
+    .json-editor-wrap {
+      background: #0d1117;
+      border: 1px solid #1c2d47;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .json-editor-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px; height: 38px;
+      background: #161b22;
+      border-bottom: 1px solid #1c2333;
+    }
+    .json-editor-icon  { color: #e8c468; font-size: 10px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+    .json-editor-name  { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #c9d1d9; flex: 1; }
+    .json-run-btn {
+      padding: 5px 14px; border-radius: 6px; border: none;
+      font-size: 12px; font-weight: 700; font-family: inherit;
+      background: var(--accent); color: #fff;
+      cursor: pointer; transition: opacity .15s; white-space: nowrap;
+    }
+    .json-run-btn:hover    { opacity: .85; }
+    .json-run-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* Overlay editor: pre (highlighted) behind transparent textarea */
+    .json-editor-area { position: relative; }
+    .json-hl {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      margin: 0; padding: 14px 18px;
+      font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.8;
+      white-space: pre; overflow: auto; pointer-events: none;
+      background: transparent; border: 0; color: #e4ecf7;
+    }
+    .json-hl::-webkit-scrollbar { display: none; }
+    .json-hl { scrollbar-width: none; }
+    .json-editor {
+      position: relative; z-index: 1;
+      width: 100%; background: transparent;
+      color: transparent; caret-color: #c9d1d9;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px; line-height: 1.8;
+      padding: 14px 18px; border: none; outline: none;
+      resize: none; min-height: 200px;
+      tab-size: 2; -moz-tab-size: 2;
+      white-space: pre; overflow-x: auto; overflow-y: auto;
+      word-break: normal; overflow-wrap: normal;
+    }
+    .json-editor::selection { background: rgba(59,130,246,.3); color: transparent; }
+
+    /* Syntax token colours for editor highlight */
+    .je-comment { color: #2d4460; font-style: italic; }
+    .je-key     { color: #93c5fd; }
+    .je-str     { color: #86efac; }
+    .je-num     { color: #fb923c; }
+    .je-bool    { color: #f472b6; }
+    .je-pun     { color: #3d5573; }
+
+    .json-error {
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+      color: var(--red); padding: 6px 18px 10px;
+      background: rgba(239,68,68,.07);
+    }
+
+    .btn {
+      padding: 9px 20px; border-radius: 8px; border: none;
+      font-size: 14px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: opacity .15s; white-space: nowrap;
+    }
+    .btn:hover    { opacity: .85; }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-primary  { background: var(--accent); color: #fff; }
+
+    /* ── Progress ─────────────────────────────────────────────────────── */
+    #progress { display: none; }
+
+    .progress-status {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 10px; font-weight: 500;
+    }
+    .spinner {
+      width: 16px; height: 16px; flex-shrink: 0;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .progress-bar-track {
+      background: var(--surface2); border-radius: 4px;
+      height: 4px; margin-bottom: 12px; overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%; background: var(--accent); border-radius: 4px;
+      transition: width .4s;
+    }
+    .log-line {
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+      color: var(--muted); padding: 1px 0;
+    }
+    .log-ok  { color: var(--green); }
+    .log-err { color: var(--red); }
+
+    /* ── Results table ────────────────────────────────────────────────── */
+    #results-wrap { display: none; overflow: hidden; }
+
+    .badge-count {
+      display: inline-block;
+      background: var(--surface2); color: var(--muted);
+      border: 1px solid var(--border2);
+      padding: 2px 10px; border-radius: 20px;
+      font-size: 12px; font-weight: 600;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 9px 16px; text-align: left;
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .06em;
+      background: var(--surface2); white-space: nowrap;
+    }
+    tbody td {
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tbody tr:hover td { background: var(--surface2); }
+
+    .cell-title {
+      font-weight: 500; max-width: 260px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .cell-url {
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+      color: var(--muted); max-width: 260px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      display: block;
+    }
+    .status-ok   { color: var(--green);  font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .status-err  { color: var(--red);    font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .status-warn { color: var(--yellow); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+    .view-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 11px; border-radius: 6px; border: none;
+      background: var(--surface2); border: 1px solid var(--border2);
+      color: var(--accent); font-size: 12px; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: all .15s;
+    }
+    .view-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* ── Markdown panel ───────────────────────────────────────────────── */
+    #md-panel {
+      display: none;
+      position: fixed; top: 52px; right: 0;
+      width: 520px; height: calc(100vh - 52px);
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
+      box-shadow: -12px 0 40px rgba(0,0,0,.5);
+      z-index: 200;
+      flex-direction: column;
+    }
+    #md-panel.open { display: flex; }
+
+    .md-panel-header {
+      position: sticky; top: 0; z-index: 1;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .md-panel-title {
+      flex: 1; font-size: 13px; font-weight: 700;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .md-close {
+      background: none; border: none; color: var(--muted);
+      font-size: 20px; cursor: pointer; line-height: 1;
+      padding: 2px 6px; border-radius: 4px; font-family: inherit;
+    }
+    .md-close:hover { background: var(--surface2); color: var(--text); }
+
+    .md-body { padding: 24px; flex: 1; }
+    .md-loading { display: flex; align-items: center; gap: 10px; color: var(--muted); }
+
+    /* Rendered markdown */
+    .md-body h1 { font-size: 20px; font-weight: 700; margin: 0 0 14px; }
+    .md-body h2 { font-size: 17px; font-weight: 700; margin: 20px 0 8px; }
+    .md-body h3 { font-size: 15px; font-weight: 700; margin: 16px 0 6px; }
+    .md-body h4 { font-size: 14px; font-weight: 700; margin: 12px 0 4px; }
+    .md-body p  { margin-bottom: 10px; }
+    .md-body a  { color: var(--accent); text-decoration: none; }
+    .md-body a:hover { text-decoration: underline; }
+    .md-body ul, .md-body ol { margin: 6px 0 10px 20px; }
+    .md-body li { margin-bottom: 3px; }
+    .md-body code {
+      background: var(--surface2); padding: 1px 5px; border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    }
+    .md-body pre {
+      background: var(--surface2); padding: 14px; border-radius: 8px;
+      overflow-x: auto; margin: 10px 0;
+    }
+    .md-body pre code { background: none; padding: 0; }
+    .md-body blockquote {
+      border-left: 3px solid var(--border2);
+      padding-left: 14px; color: var(--muted); margin: 10px 0;
+    }
+    .md-body img { max-width: 100%; border-radius: 6px; margin: 8px 0; }
+    .md-body table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    .md-body th, .md-body td { border: 1px solid var(--border2); padding: 6px 10px; font-size: 13px; }
+    .md-body th { background: var(--surface2); font-weight: 700; }
+    .md-body hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+    /* ── Search results ───────────────────────────────────────────────── */
+    #pane-search { display: none; }
+
+    .search-bar {
+      display: flex; gap: 10px; align-items: center;
+    }
+    .search-input {
+      flex: 1;
+      background: var(--surface2); border: 1px solid var(--border2);
+      color: var(--text); padding: 10px 16px; border-radius: 8px;
+      font-size: 15px; font-family: inherit; outline: none;
+      transition: border-color .15s;
+    }
+    .search-input:focus { border-color: var(--accent); }
+
+    #search-results-wrap { display: none; }
+
+    .results-meta {
+      font-size: 12px; color: var(--muted);
+      padding: 10px 0 16px;
+    }
+
+    .result-list { display: flex; flex-direction: column; gap: 4px; }
+
+    .result-card {
+      padding: 16px 20px; border-radius: 10px;
+      border: 1px solid transparent;
+      transition: border-color .15s, background .15s;
+      cursor: pointer;
+      text-decoration: none; color: inherit; display: block;
+    }
+    .result-card:hover {
+      background: var(--surface2);
+      border-color: var(--border);
+    }
+
+    .result-position {
+      font-size: 11px; color: var(--muted); font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .result-title {
+      font-size: 16px; font-weight: 600; color: var(--accent);
+      margin-bottom: 4px; line-height: 1.35;
+    }
+    .result-card:hover .result-title { text-decoration: underline; }
+    .result-url {
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+      color: var(--green); margin-bottom: 6px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .result-desc {
+      font-size: 13px; color: var(--muted); line-height: 1.55;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+
+    .search-spinner {
+      display: none; align-items: center; gap: 10px;
+      color: var(--muted); padding: 20px 0;
+    }
+    .search-spinner.visible { display: flex; }
+
+    /* source tabs — always visible on search pane */
+    .source-tabs {
+      display: flex; gap: 6px; margin-bottom: 16px;
+    }
+    .source-tab {
+      padding: 5px 14px; border-radius: 6px; border: 1px solid var(--border2);
+      background: none; color: var(--muted); font-size: 13px; font-weight: 500;
+      font-family: inherit; cursor: pointer; transition: all .15s;
+    }
+    .source-tab:hover { color: var(--text); background: var(--surface2); }
+    .source-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+    /* image grid */
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+    }
+    .image-card {
+      border-radius: 10px; overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      text-decoration: none; color: inherit;
+      transition: border-color .15s, transform .15s;
+      display: flex; flex-direction: column;
+    }
+    .image-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .image-card img {
+      width: 100%; aspect-ratio: 16/9; object-fit: cover;
+      background: var(--surface2);
+      display: block;
+    }
+    .image-card-title {
+      padding: 8px 10px; font-size: 12px; color: var(--muted); line-height: 1.35;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+
+    /* read button & expand */
+    .result-card-inner { display: flex; align-items: flex-start; gap: 12px; }
+    .result-card-body  { flex: 1; min-width: 0; }
+    .read-btn {
+      flex-shrink: 0; margin-top: 2px;
+      padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border2);
+      background: none; color: var(--muted); font-size: 12px; font-weight: 500;
+      font-family: inherit; cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .read-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .read-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim,rgba(59,130,246,.1)); }
+
+    .result-expand {
+      display: none; margin-top: 12px;
+      padding: 16px; border-radius: 8px;
+      background: var(--surface2); border: 1px solid var(--border);
+      font-size: 13px; line-height: 1.65; color: var(--muted);
+      white-space: pre-wrap; word-break: break-word;
+      max-height: 320px; overflow-y: auto;
+    }
+    .result-expand.open { display: block; }
+    .result-date { font-size: 11.5px; color: var(--muted); margin-bottom: 4px; }
+
+    /* ── Map URL list ─────────────────────────────────────────────────── */
+    .url-table { width: 100%; border-collapse: collapse; }
+    .url-table td {
+      padding: 7px 16px; border-top: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    }
+    .url-table tr:hover td { background: var(--surface2); }
+    .url-table .url-num  { color: var(--muted); width: 44px; text-align: right; user-select: none; }
+    .url-table .url-link { color: var(--green); }
+    .url-table .url-link a { color: inherit; text-decoration: none; }
+    .url-table .url-link a:hover { text-decoration: underline; }
+
+    /* ── Map results ──────────────────────────────────────────────────── */
+    #pane-map { display: none; }
+
+    .map-spinner {
+      display: none; align-items: center; gap: 10px;
+      color: var(--muted); padding: 20px 0;
+    }
+    .map-spinner.visible { display: flex; }
+
+    #map-results-wrap { display: none; }
+
+    .map-stats {
+      display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .map-stat {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 16px;
+      display: flex; flex-direction: column; gap: 2px; min-width: 100px;
+    }
+    .map-stat-value {
+      font-size: 22px; font-weight: 700; color: var(--accent);
+      font-family: 'JetBrains Mono', monospace; line-height: 1;
+    }
+    .map-stat-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+
+    .map-section { margin-bottom: 8px; }
+    .map-section-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      cursor: pointer; user-select: none;
+      transition: background .15s;
+    }
+    .map-section-header:hover { background: var(--surface2); }
+    .map-section-chevron { color: var(--muted); font-size: 11px; transition: transform .2s; }
+    .map-section-chevron.open { transform: rotate(90deg); }
+    .map-section-name {
+      flex: 1; font-weight: 600; font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .map-section-count {
+      background: var(--surface2); border: 1px solid var(--border2);
+      color: var(--muted); padding: 1px 9px; border-radius: 20px;
+      font-size: 12px; font-weight: 700;
+    }
+    .map-section-count.big {
+      background: rgba(59,130,246,.15); border-color: rgba(59,130,246,.4);
+      color: var(--accent);
+    }
+    .map-section-body {
+      display: none; padding: 8px 0 4px 14px;
+    }
+    .map-section-body.open { display: block; }
+    .map-url {
+      display: block; padding: 3px 0;
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+      color: var(--muted); text-decoration: none;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      transition: color .1s;
+    }
+    .map-url:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-brand">Browserless</span>
+  <span class="nav-sep">/</span>
+  <span style="color:var(--muted)">demo</span>
+  <span class="nav-spacer"></span>
+  <button class="tab active" id="tab-crawl"  onclick="switchTab('crawl')">Crawl</button>
+  <button class="tab"        id="tab-search" onclick="switchTab('search')">Search</button>
+  <button class="tab"        id="tab-map"    onclick="switchTab('map')">Map</button>
+</nav>
+
+<main>
+<div class="app-layout">
+<div class="app-main">
+
+<div id="pane-crawl">
+
+  <div class="json-editor-wrap">
+    <div class="json-editor-header">
+      <span class="json-editor-icon">{ }</span>
+      <span class="json-editor-name">crawl-body.json</span>
+      <button class="json-run-btn" id="run-btn">▶ Run</button>
+    </div>
+    <div class="json-editor-area">
+    <pre class="json-hl" id="crawl-json-hl" aria-hidden="true"></pre>
+    <textarea class="json-editor" id="crawl-json" spellcheck="false" rows="14" wrap="off">{
+  "url": "https://news.ycombinator.com/",
+  "maxDepth": 1,
+  "limit": 20,
+  "scrapeOptions": {
+    "formats": ["markdown"],
+    "onlyMainContent": true
+  }
+}
+
+// ── uncomment to explore more options ─────────────────────────────
+// "maxDepth": 3,               — crawl 3 levels deep (default: 5)
+// "limit": 50,                 — max pages to crawl (default: 100)
+// "delay": 500,                — ms between requests (default: 200)
+// "allowExternalLinks": true,  — follow links off-domain
+// "allowSubdomains": true,     — follow subdomain links
+// "sitemap": "force",          — force sitemap use ("auto","force","skip")
+// "includePaths": ["^/blog"],  — regex: only crawl matching paths
+// "excludePaths": ["^/login"], — regex: skip matching paths
+// "scrapeOptions": {
+//   "formats": ["markdown", "html", "rawText"],
+//   "onlyMainContent": false,  — include nav + footer
+//   "waitFor": 2000,           — wait 2s for JS to execute (max 30000)
+//   "timeout": 30000           — nav timeout in ms (max 180000)
+// }</textarea>
+    </div><!-- /json-editor-area -->
+    <div class="json-error" id="crawl-json-error" style="display:none"></div>
+  </div>
+
+  <!-- Progress -->
+  <div class="card" id="progress">
+    <div class="card-body">
+      <div class="progress-status">
+        <div class="spinner" id="spinner"></div>
+        <span id="progress-label">Connecting…</span>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+      </div>
+      <div id="log"></div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card" id="results-wrap">
+    <div class="card-header">
+      <span class="card-title">Results</span>
+      <span class="badge-count" id="results-count"></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Status</th>
+          <th>Source URL</th>
+          <th>Content</th>
+        </tr>
+      </thead>
+      <tbody id="results-body"></tbody>
+    </table>
+  </div>
+
+</div><!-- /pane-crawl -->
+
+<!-- ── Search pane ─────────────────────────────────────────────────── -->
+<div id="pane-search">
+
+  <div class="json-editor-wrap">
+    <div class="json-editor-header">
+      <span class="json-editor-icon">{ }</span>
+      <span class="json-editor-name">search-body.json</span>
+      <button class="json-run-btn" id="search-btn">▶ Search</button>
+    </div>
+    <div class="json-editor-area">
+    <pre class="json-hl" id="search-json-hl" aria-hidden="true"></pre>
+    <textarea class="json-editor" id="search-json" spellcheck="false" rows="12" wrap="off">{
+  "query": "ai video generation",
+  "sources": ["web"],
+  "limit": 10
+}
+
+// ── switch source ──────────────────────────────────────────────────
+// "sources": ["news"],         — latest news articles
+// "sources": ["images"],       — image results
+//
+// ── filter by time ─────────────────────────────────────────────────
+// "tbs": "day",                — past 24h ("day","week","month","year")
+//
+// ── geo-target ─────────────────────────────────────────────────────
+// "lang": "en",                — result language (default: "en")
+// "country": "us",             — ISO country code (e.g. "gb", "de")
+// "location": "San Francisco", — city/region string
+//
+// ── filter by category ─────────────────────────────────────────────
+// "categories": ["research"],  — "github", "research", "pdf"
+//
+// ── tweak results ─────────────────────────────────────────────────
+// "limit": 5,                  — fewer results, faster
+// "limit": 20                  — more results (max 20)</textarea>
+    </div><!-- /json-editor-area -->
+    <div class="json-error" id="search-json-error" style="display:none"></div>
+  </div>
+
+  <div class="search-spinner" id="search-spinner">
+    <div class="spinner"></div>
+    <span>Searching…</span>
+  </div>
+
+  <div id="search-results-wrap">
+    <div class="results-meta" id="search-meta"></div>
+    <div class="result-list" id="result-list"></div>
+  </div>
+
+</div><!-- /pane-search -->
+
+<!-- ── Map pane ────────────────────────────────────────────────────── -->
+<div id="pane-map">
+
+  <div class="json-editor-wrap">
+    <div class="json-editor-header">
+      <span class="json-editor-icon">{ }</span>
+      <span class="json-editor-name">map-body.json</span>
+      <button class="json-run-btn" id="map-run-btn">▶ Run</button>
+    </div>
+    <div class="json-editor-area">
+    <pre class="json-hl" id="map-json-hl" aria-hidden="true"></pre>
+    <textarea class="json-editor" id="map-json" spellcheck="false" rows="12" wrap="off">{
+  "url": "https://docs.browserless.io",
+  "limit": 20,
+  "sitemap": "include"
+}
+
+// ── uncomment to explore more options ─────────────────────────────
+// "limit": 500,                     — map up to 500 URLs (max 5000)
+// "sitemap": "skip",                — crawl only, ignore sitemap.xml
+// "sitemap": "only",                — only follow sitemap.xml
+// "includeSubdomains": false,       — skip subdomain links (default: true)
+// "ignoreQueryParameters": false,   — include ?query= URLs (default: true)
+// "search": "getting started",      — rank results by relevance to query
+// "location": { "country": "gb" }   — geo-target proxy (ISO country code)</textarea>
+    </div><!-- /json-editor-area -->
+    <div class="json-error" id="map-json-error" style="display:none"></div>
+  </div>
+
+  <div class="map-spinner" id="map-spinner">
+    <div class="spinner"></div>
+    <span>Mapping site…</span>
+  </div>
+
+  <div id="map-results-wrap">
+    <div class="map-stats" id="map-stats"></div>
+    <div id="map-url-list"></div>
+  </div>
+
+</div><!-- /pane-map -->
+
+</div><!-- /app-main -->
+
+<!-- ── Terminal panel ──────────────────────────────────────────────── -->
+<!-- Hidden IDE elements kept for JS compat (updateIDE still called internally) -->
+<div style="display:none" aria-hidden="true">
+  <span id="ide-filename"></span>
+  <span id="ide-endpoint-badge"></span>
+  <div id="ide-gutter"></div>
+  <div id="ide-code"></div>
+</div>
+
+<div class="app-terminal">
+
+  <div class="terminal-wrap">
+    <div class="terminal-titlebar">
+      <span class="t-dot t-dot-r"></span>
+      <span class="t-dot t-dot-y"></span>
+      <span class="t-dot t-dot-g"></span>
+      <span class="terminal-label">HTTP REQUEST</span>
+      <span class="terminal-endpoint" id="terminal-endpoint">—</span>
+      <button class="term-clear-btn" id="term-clear-btn">clear</button>
+    </div>
+    <div class="terminal-body" id="terminal-body">
+      <span class="terminal-idle">// Run a request to see it here</span>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app-layout -->
+</main>
+
+<!-- Markdown side panel -->
+<div id="md-panel">
+  <div class="md-panel-header">
+    <span class="md-panel-title" id="md-panel-title">Content</span>
+    <button class="md-close" id="md-close">×</button>
+  </div>
+  <div class="md-body" id="md-body"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  const $ = id => document.getElementById(id);
+  let evtSource = null;
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function addLog(text, cls) {
+    const el = $('log');
+    const d = document.createElement('div');
+    d.className = 'log-line' + (cls ? ' ' + cls : '');
+    d.textContent = text;
+    el.appendChild(d);
+    while (el.children.length > 8) el.removeChild(el.firstChild);
+  }
+
+  function setBar(pct, label) {
+    $('progress-bar').style.width = pct + '%';
+    if (label) $('progress-label').textContent = label;
+  }
+
+  // ── crawl ──────────────────────────────────────────────────────────────
+  function startCrawl() {
+    let body;
+    try {
+      body = parseJsonEdit($('crawl-json').value);
+      jsonEditError('crawl-json-error', null);
+    } catch(e) {
+      jsonEditError('crawl-json-error', 'Invalid JSON — ' + e.message);
+      return;
+    }
+    const url      = body.url;
+    const maxDepth = Math.min(body.maxDepth || 1, 3);
+    const limit    = Math.min(body.limit    || 20, 50);
+    if (!url) return;
+
+    $('run-btn').disabled = true;
+    $('results-wrap').style.display = 'none';
+    $('progress').style.display = 'block';
+    $('log').innerHTML = '';
+    $('spinner').style.animation = 'spin .7s linear infinite';
+    setBar(0, 'Connecting…');
+
+    if (evtSource) evtSource.close();
+
+    const params = new URLSearchParams({ url, maxDepth, limit });
+
+    // Show Browserless crawl body in IDE
+    const crawlBody = { url, limit, maxDepth, scrapeOptions: { formats: ['markdown'], onlyMainContent: true, waitFor: 0 } };
+    updateIDE(crawlBody, 'crawl-body.json', '/crawl');
+
+    termSep();
+    // Client opens SSE to our proxy
+    termReq({ method: 'GET', path: '/api/crawl-stream', host: location.host, hasBody: false, isQueryToken: false });
+    termAppend(`<span class="t-ind"></span><span class="t-hk">Query</span><span class="t-pun">: </span><span class="t-hv">url=${esc(url)}, maxDepth=${maxDepth}, limit=${limit}</span>`);
+
+    _crawlId = null;
+    evtSource = new EventSource('/api/crawl-stream?' + params);
+
+    evtSource.addEventListener('status', e => {
+      const d = JSON.parse(e.data);
+      addLog(d.message);
+      if (d.phase === 'connecting') {
+        setBar(5, 'Connecting…');
+        termEvent('status', d.message);
+        // Show the server calling Browserless
+        termReq({ method: 'POST', path: '/crawl', host: 'production-sfo.browserless.io', hasBody: true });
+      }
+      if (d.phase === 'crawling') {
+        setBar(10, 'Crawl started…');
+        _crawlId = d.id || null;
+        termResp({ status: 200, ms: null, summary: `crawl started${_crawlId ? ' — id: ' + _crawlId : ''}` });
+        termEvent('status', d.message);
+      }
+      if (d.phase === 'done') {
+        setBar(100, d.message);
+        stopSpinner();
+        termEvent('status', d.message);
+      }
+    });
+
+    evtSource.addEventListener('progress', e => {
+      const d = JSON.parse(e.data);
+      const total = d.total && d.total !== '?' ? d.total : null;
+      const pct   = total ? Math.round((d.completed / total) * 85) + 10 : 30;
+      setBar(pct, `${d.completed}${total ? ' / ' + total : ''} pages`);
+      addLog(d.message);
+      // Show the server polling Browserless GET /crawl/{id}
+      const pollPath = _crawlId ? `/crawl/${_crawlId}` : '/crawl/:id';
+      termReq({ method: 'GET', path: pollPath, host: 'production-sfo.browserless.io', hasBody: false });
+      termResp({ status: 200, ms: null, summary: d.message });
+    });
+
+    evtSource.addEventListener('result', e => {
+      const d = JSON.parse(e.data);
+      renderTable(d.pages || []);
+      termEvent('result', `${d.pages?.length || 0} pages scraped, ${d.failed || 0} failed`);
+    });
+
+    evtSource.addEventListener('error', e => {
+      const d = JSON.parse(e.data);
+      addLog('Error: ' + d.message, 'log-err');
+      stopSpinner();
+      termErr(d.message);
+    });
+
+    evtSource.onerror = () => { addLog('Connection lost', 'log-err'); stopSpinner(); };
+  }
+
+  function stopSpinner() {
+    $('run-btn').disabled = false;
+    $('spinner').style.animation = 'none';
+    if (evtSource) { evtSource.close(); evtSource = null; }
+  }
+
+  // ── table ──────────────────────────────────────────────────────────────
+  function renderTable(pages) {
+    if (!pages.length) { addLog('No pages returned', 'log-err'); return; }
+
+    const tbody = $('results-body');
+    tbody.innerHTML = '';
+    $('results-count').textContent = pages.length + (pages.length === 1 ? ' page' : ' pages');
+    $('results-wrap').style.display = 'block';
+
+    for (const page of pages) {
+      const meta       = page.metadata || {};
+      const title      = meta.title    || page.title    || '(no title)';
+      const status     = meta.statusCode ?? page.statusCode ?? '—';
+      const sourceURL  = meta.sourceURL  || page.url    || '—';
+      const contentUrl = page.contentUrl || '';
+
+      const statusCls = status === 200 ? 'status-ok'
+                      : status >= 400  ? 'status-err'
+                      : 'status-warn';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><div class="cell-title" title="${esc(title)}">${esc(title)}</div></td>
+        <td><span class="${statusCls}">${esc(String(status))}</span></td>
+        <td><span class="cell-url"   title="${esc(sourceURL)}">${esc(sourceURL)}</span></td>
+        <td>${contentUrl
+          ? `<button class="view-btn" data-url="${esc(contentUrl)}" data-title="${esc(title)}">📄 View</button>`
+          : '<span style="color:var(--muted)">—</span>'
+        }</td>`;
+      tbody.appendChild(tr);
+    }
+
+    tbody.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', () => openPanel(btn.dataset.url, btn.dataset.title));
+    });
+  }
+
+  // ── markdown panel ─────────────────────────────────────────────────────
+  async function openPanel(contentUrl, title) {
+    $('md-panel').classList.add('open');
+    $('md-panel-title').textContent = title;
+    $('md-body').innerHTML = '<div class="md-loading"><div class="spinner"></div>&nbsp;Loading…</div>';
+
+    try {
+      const r    = await fetch('/api/fetch-content?' + new URLSearchParams({ url: contentUrl }));
+      const data = await r.json();
+      const md   = data.markdown || data.content || '*(no content)*';
+      $('md-body').innerHTML = marked.parse(md);
+    } catch (err) {
+      $('md-body').innerHTML = `<p style="color:var(--red)">Error: ${esc(err.message)}</p>`;
+    }
+  }
+
+  function closePanel() { $('md-panel').classList.remove('open'); }
+
+  // ── tabs ───────────────────────────────────────────────────────────────
+  function switchTab(name) {
+    ['crawl', 'search', 'map'].forEach(n => {
+      $('pane-' + n).style.display = n === name ? 'block' : 'none';
+      const btn = $('tab-' + n);
+      if (btn) btn.classList.toggle('active', n === name);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    syncIDE(name);
+  }
+
+  // ── search ─────────────────────────────────────────────────────────────
+  let currentSource = 'web';
+  let lastQuery     = '';
+
+  function setSourceTab(source) {
+    currentSource = source;
+    document.querySelectorAll('.source-tab').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.source === source);
+    });
+    // Patch "sources" line in the textarea
+    const ta = $('search-json');
+    ta.value = ta.value.replace(/"sources"\s*:\s*\[[^\]]*\]/, `"sources": ["${source}"]`);
+    syncIDE('search');
+    if (lastQuery) runSearch();
+  }
+
+  async function runSearch() {
+    let body;
+    try {
+      body = parseJsonEdit($('search-json').value);
+      jsonEditError('search-json-error', null);
+    } catch(e) {
+      jsonEditError('search-json-error', 'Invalid JSON — ' + e.message);
+      return;
+    }
+    const query = body.query;
+    if (!query) return;
+    lastQuery = query;
+    // Sync currentSource from JSON
+    if (Array.isArray(body.sources) && body.sources.length) {
+      currentSource = body.sources[0];
+      document.querySelectorAll('.source-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.source === currentSource);
+      });
+    }
+
+    const searchBody = { query, limit: body.limit || 10, sources: body.sources || [currentSource] };
+    $('search-btn').disabled = true;
+    $('search-results-wrap').style.display = 'none';
+    $('search-spinner').classList.add('visible');
+
+    updateIDE(searchBody, 'search-body.json', '/search');
+    termSep();
+    termReq({ method: 'POST', path: '/search', host: 'production-sfo.browserless.io', hasBody: true });
+
+    try {
+      const t0   = Date.now();
+      const r    = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(searchBody),
+      });
+      const data = await r.json();
+      const ms   = Date.now() - t0;
+
+      if (!data.ok) throw new Error(data.error || 'Search failed');
+      renderSearchResults(data.results || [], query, ms);
+      termResp({ status: 200, ms, summary: `${data.results?.length || 0} results returned` });
+    } catch (err) {
+      $('search-meta').textContent = 'Error: ' + err.message;
+      $('search-results-wrap').style.display = 'block';
+      termResp({ status: 500, ms: null });
+      termErr(err.message);
+    } finally {
+      $('search-btn').disabled = false;
+      $('search-spinner').classList.remove('visible');
+    }
+  }
+
+  function renderSearchResults(results, query, ms) {
+    const list = $('result-list');
+    list.innerHTML = '';
+
+    $('search-meta').textContent =
+      results.length
+        ? `${results.length} result${results.length !== 1 ? 's' : ''} — ${(ms/1000).toFixed(2)}s`
+        : `No results for "${query}"`;
+
+    if (currentSource === 'images') {
+      renderImageGrid(results, list);
+    } else {
+      renderWebOrNews(results, list);
+    }
+
+    $('search-results-wrap').style.display = 'block';
+  }
+
+  function renderWebOrNews(results, list) {
+    list.className = 'result-list';
+    for (const r of results) {
+      const wrap = document.createElement('div');
+      wrap.className = 'result-card';
+
+      const displayUrl = (() => {
+        try { const u = new URL(r.url); return u.hostname + u.pathname; }
+        catch { return r.url || ''; }
+      })();
+
+      const dateVal  = r.date || r.publishedDate || r.pubDate || r.published || '';
+      const dateHtml = dateVal
+        ? `<div class="result-date">${esc(dateVal)}</div>` : '';
+
+      wrap.innerHTML = `
+        <div class="result-card-inner">
+          <div class="result-card-body">
+            <div class="result-position">${esc(String(r.position || ''))}</div>
+            ${dateHtml}
+            <div class="result-title">
+              <a href="${esc(r.url||'#')}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">
+                ${esc(r.title || '(no title)')}
+              </a>
+            </div>
+            <div class="result-url">${esc(displayUrl)}</div>
+            <div class="result-desc">${esc(r.description || '')}</div>
+          </div>
+          ${r.url ? `<button class="read-btn" data-url="${esc(r.url)}" data-title="${esc(r.title||'')}">📖 Read</button>` : ''}
+        </div>
+        <div class="result-expand" id="expand-${esc(r.url||Math.random())}"></div>`;
+
+      list.appendChild(wrap);
+    }
+
+    // Wire up Read buttons
+    list.querySelectorAll('.read-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        toggleRead(btn);
+      });
+    });
+  }
+
+  function renderImageGrid(results, list) {
+    list.className = 'image-grid';
+    for (const r of results) {
+      const imgSrc = r.imageUrl || r.thumbnailUrl || r.url || '';
+      const a = document.createElement('a');
+      a.className = 'image-card';
+      a.href = r.url || '#';
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.innerHTML = `
+        <img src="${esc(imgSrc)}" alt="${esc(r.title||'')}" loading="lazy"
+             onerror="this.style.background='var(--surface2)';this.src=''">
+        <div class="image-card-title">${esc(r.title || displayDomain(r.url))}</div>`;
+      list.appendChild(a);
+    }
+  }
+
+  function displayDomain(url) {
+    try { return new URL(url).hostname; } catch { return url || ''; }
+  }
+
+  // ── read / scrape ──────────────────────────────────────────────────────
+  async function toggleRead(btn) {
+    const url   = btn.dataset.url;
+    const expandId = 'expand-' + url;
+    const expand   = document.getElementById(expandId);
+    if (!expand) return;
+
+    // Toggle close
+    if (expand.classList.contains('open')) {
+      expand.classList.remove('open');
+      btn.classList.remove('active');
+      btn.textContent = '📖 Read';
+      return;
+    }
+
+    // Open — fetch if not already loaded
+    btn.classList.add('active');
+    btn.textContent = '…';
+    expand.classList.add('open');
+
+    if (expand.dataset.loaded) {
+      btn.textContent = '✕ Close';
+      return;
+    }
+
+    expand.textContent = 'Loading…';
+
+    try {
+      const r    = await fetch('/api/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const data = await r.json();
+      if (!data.ok) throw new Error(data.error || 'Scrape failed');
+      expand.textContent = data.text || '(no content)';
+      expand.dataset.loaded = '1';
+    } catch (err) {
+      expand.textContent = 'Error: ' + err.message;
+    }
+
+    btn.textContent = '✕ Close';
+  }
+
+  // ── map ────────────────────────────────────────────────────────────────
+  async function runMap() {
+    let body;
+    try {
+      body = parseJsonEdit($('map-json').value);
+      jsonEditError('map-json-error', null);
+    } catch(e) {
+      jsonEditError('map-json-error', 'Invalid JSON — ' + e.message);
+      return;
+    }
+    const url   = body.url;
+    const limit = Math.min(body.limit || 200, 500);
+    if (!url) return;
+
+    const mapBody = { url, limit, sitemap: body.sitemap || 'include', includeSubdomains: body.includeSubdomains || false };
+    $('map-run-btn').disabled = true;
+    $('map-results-wrap').style.display = 'none';
+    $('map-spinner').classList.add('visible');
+
+    updateIDE(mapBody, 'map-body.json', '/map');
+    termSep();
+    termReq({ method: 'POST', path: '/map', host: 'production-sfo.browserless.io', hasBody: true });
+
+    try {
+      const t0 = Date.now();
+      const r  = await fetch('/api/map', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mapBody),
+      });
+      const data = await r.json();
+      const ms   = Date.now() - t0;
+
+      if (!data.ok) throw new Error(data.error || 'Map failed');
+      renderMapResults(data.urls || [], url, ms);
+      termResp({ status: 200, ms, summary: `${data.urls?.length || 0} URLs discovered` });
+    } catch (err) {
+      $('map-stats').innerHTML = `<p style="color:var(--red)">Error: ${esc(err.message)}</p>`;
+      $('map-results-wrap').style.display = 'block';
+      termResp({ status: 500, ms: null });
+      termErr(err.message);
+    } finally {
+      $('map-run-btn').disabled = false;
+      $('map-spinner').classList.remove('visible');
+    }
+  }
+
+  function renderMapResults(urls, baseUrl, ms) {
+    const cleanUrls = urls.map(u => typeof u === 'string' ? u : (u.url || '')).filter(Boolean);
+
+    $('map-stats').innerHTML = `
+      <div class="map-stat"><div class="map-stat-value">${cleanUrls.length}</div><div class="map-stat-label">URLs</div></div>
+      <div class="map-stat"><div class="map-stat-value">${(ms/1000).toFixed(1)}s</div><div class="map-stat-label">Time</div></div>`;
+
+    const container = $('map-url-list');
+    const table = document.createElement('table');
+    table.className = 'url-table';
+    table.innerHTML = cleanUrls.map((u, i) =>
+      `<tr>
+        <td class="url-num">${i + 1}</td>
+        <td class="url-link"><a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a></td>
+      </tr>`
+    ).join('');
+    container.innerHTML = '';
+    container.appendChild(table);
+
+    $('map-results-wrap').style.display = 'block';
+  }
+
+  // ── Editor syntax highlighting ─────────────────────────────────────────
+  function tokenizeJsonLine(line) {
+    let out = '', i = 0;
+    while (i < line.length) {
+      const c = line[i];
+      // String
+      if (c === '"') {
+        let j = i+1, s = '"';
+        while (j < line.length) {
+          if (line[j] === '\\') { s += line[j] + (line[j+1]||''); j+=2; continue; }
+          s += line[j]; if (line[j++] === '"') break;
+        }
+        let k = j; while (k < line.length && line[k] === ' ') k++;
+        out += `<span class="${line[k]===':'?'je-key':'je-str'}">${esc(s)}</span>`;
+        i = j; continue;
+      }
+      // Number
+      if (c === '-' || (c >= '0' && c <= '9')) {
+        let n = ''; while (i < line.length && /[-\d.eE+]/.test(line[i])) n += line[i++];
+        out += `<span class="je-num">${n}</span>`; continue;
+      }
+      // Keywords
+      let hit = false;
+      for (const [w, cl] of [['true','je-bool'],['false','je-bool'],['null','je-bool']]) {
+        if (line.startsWith(w, i)) { out += `<span class="${cl}">${w}</span>`; i += w.length; hit = true; break; }
+      }
+      if (hit) continue;
+      // Punctuation
+      if ('{}[],:'.includes(c)) { out += `<span class="je-pun">${esc(c)}</span>`; i++; continue; }
+      out += esc(c); i++;
+    }
+    return out;
+  }
+
+  function highlightJsonEdit(str) {
+    return str.split('\n').map(line =>
+      /^\s*\/\//.test(line)
+        ? `<span class="je-comment">${esc(line)}</span>`
+        : tokenizeJsonLine(line)
+    ).join('\n');
+  }
+
+  function initEditorHL(taId, hlId, tabName) {
+    const ta = $(taId), hl = $(hlId);
+    const render = () => { hl.innerHTML = highlightJsonEdit(ta.value); };
+    ta.addEventListener('input', () => { render(); syncIDE(tabName); });
+    ta.addEventListener('scroll', () => { hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft; });
+    render();
+  }
+
+  // ── JSON with comments parser ──────────────────────────────────────────
+  function parseJsonEdit(str) {
+    // Strip // comments without touching strings (e.g. URLs with //)
+    let out = '', inStr = false, esc = false;
+    for (let i = 0; i < str.length; i++) {
+      const c = str[i];
+      if (esc)              { out += c; esc = false; continue; }
+      if (c === '\\' && inStr) { out += c; esc = true; continue; }
+      if (c === '"')        { inStr = !inStr; out += c; continue; }
+      if (!inStr && c === '/' && str[i+1] === '/') {
+        while (i < str.length && str[i] !== '\n' && str[i] !== '\r') i++;
+        continue;
+      }
+      out += c;
+    }
+    // Strip trailing commas before } or ]
+    const fixed = out.replace(/,(\s*[}\]])/g, '$1');
+    return JSON.parse(fixed.trim());
+  }
+
+  function jsonEditError(errorElId, msg) {
+    const el = $(errorElId);
+    if (msg) { el.textContent = '⚠ ' + msg; el.style.display = 'block'; }
+    else      { el.textContent = '';          el.style.display = 'none';  }
+  }
+
+  // ── JSON syntax highlighter ────────────────────────────────────────────
+  function jsonHl(val, depth) {
+    depth = depth || 0;
+    const pad  = '  '.repeat(depth);
+    const pad1 = '  '.repeat(depth + 1);
+    if (val === null)                  return `<span class="t-null">null</span>`;
+    if (val === true || val === false) return `<span class="t-bool">${val}</span>`;
+    if (typeof val === 'number')       return `<span class="t-num">${val}</span>`;
+    if (typeof val === 'string')       return `<span class="t-str">"${esc(val)}"</span>`;
+    if (Array.isArray(val)) {
+      if (!val.length) return `<span class="t-pun">[]</span>`;
+      const items = val.map(v => pad1 + jsonHl(v, depth + 1)).join(`<span class="t-pun">,</span>\n`);
+      return `<span class="t-pun">[</span>\n${items}\n${pad}<span class="t-pun">]</span>`;
+    }
+    if (typeof val === 'object') {
+      const keys = Object.keys(val);
+      if (!keys.length) return `<span class="t-pun">{}</span>`;
+      const pairs = keys.map(k =>
+        `${pad1}<span class="t-key">"${esc(k)}"</span><span class="t-pun">: </span>${jsonHl(val[k], depth + 1)}`
+      ).join(`<span class="t-pun">,</span>\n`);
+      return `<span class="t-pun">{</span>\n${pairs}\n${pad}<span class="t-pun">}</span>`;
+    }
+    return esc(String(val));
+  }
+
+  // ── IDE editor ─────────────────────────────────────────────────────────
+  function updateIDE(body, filename, endpointLabel) {
+    if (filename)      $('ide-filename').textContent = filename;
+    if (endpointLabel) $('ide-endpoint-badge').textContent = endpointLabel;
+
+    if (!body) {
+      $('ide-gutter').innerHTML = '';
+      $('ide-code').innerHTML   = '<span class="ide-placeholder">// no request body</span>';
+      return;
+    }
+
+    const raw   = JSON.stringify(body, null, 2);
+    const lines = raw.split('\n');
+    $('ide-gutter').innerHTML = lines.map((_, i) => `<span class="ide-ln">${i + 1}</span>`).join('');
+    $('ide-code').innerHTML   = jsonHl(body);
+  }
+
+  // ── Terminal — append-only log ─────────────────────────────────────────
+  let _termEmpty = true;
+  let _crawlId   = null;
+
+  function termTs() {
+    const d = new Date();
+    const hh = String(d.getHours()).padStart(2,'0');
+    const mm = String(d.getMinutes()).padStart(2,'0');
+    const ss = String(d.getSeconds()).padStart(2,'0');
+    return `<span class="t-ts">${hh}:${mm}:${ss}</span> `;
+  }
+
+  function termAppend(html) {
+    const el = $('terminal-body');
+    if (_termEmpty) { el.innerHTML = ''; _termEmpty = false; }
+    el.innerHTML += html + '\n';
+    el.scrollTop  = el.scrollHeight;
+  }
+
+  function termSep() {
+    termAppend(`<span style="color:#0f1e35;user-select:none">${'─'.repeat(44)}</span>`);
+  }
+
+  // Show an HTTP request line + headers (no body — body goes in IDE)
+  function termReq({ method, path, host, hasBody, isQueryToken }) {
+    $('terminal-endpoint').textContent = path.split('?')[0];
+    const tokenSuffix = isQueryToken !== false ? `<span class="t-pun">?token=</span><span class="t-hv">•••••••••</span>` : '';
+    termAppend(`${termTs()}<span class="t-method">${method}</span> <span class="t-path">${esc(path.split('?')[0])}</span>${tokenSuffix} <span class="t-ver">HTTP/1.1</span>`);
+    termAppend(`<span class="t-ind"></span><span class="t-hk">Host</span><span class="t-pun">: </span><span class="t-hv">${esc(host)}</span>`);
+    if (hasBody) {
+      termAppend(`<span class="t-ind"></span><span class="t-hk">Content-Type</span><span class="t-pun">: </span><span class="t-hv">application/json</span>`);
+    }
+  }
+
+  // Show a response line
+  function termResp({ status, ms, summary }) {
+    const cls  = (status >= 200 && status < 300) ? 't-ok' : 't-err';
+    const text = { 200:'OK', 201:'Created', 204:'No Content' }[status] || 'Error';
+    let line = `${termTs()}<span class="t-pun">← </span><span class="${cls}">${status} ${text}</span>`;
+    if (ms) line += `  <span class="t-comment">(${(ms/1000).toFixed(2)}s)</span>`;
+    termAppend(line);
+    if (summary) termAppend(`<span class="t-ind"></span><span class="t-comment">// ${esc(summary)}</span>`);
+  }
+
+  // Show an SSE event line
+  function termEvent(eventName, detail) {
+    termAppend(`${termTs()}<span class="t-sse">◆ ${esc(eventName)}</span>  <span class="t-comment">// ${esc(detail)}</span>`);
+  }
+
+  // Show error
+  function termErr(msg) {
+    termAppend(`${termTs()}<span class="t-err">✖ ${esc(msg)}</span>`);
+  }
+
+  // Preview request in IDE without logging to terminal
+  function termPreview({ method, endpoint, host, body, filename }) {
+    updateIDE(body, filename || endpoint.replace(/^\//, '') + '.json', endpoint);
+    $('terminal-endpoint').textContent = endpoint;
+  }
+
+  // ── syncIDE — parse textarea and update right IDE panel ────────────────
+  function syncIDE(tabName) {
+    const map = { crawl: ['crawl-json','crawl-body.json','/crawl'], search: ['search-json','search-body.json','/search'], map: ['map-json','map-body.json','/map'] };
+    const [taId, filename, endpoint] = map[tabName] || [];
+    if (!taId) return;
+    try {
+      const body = parseJsonEdit($(taId).value);
+      updateIDE(body, filename, endpoint);
+    } catch {
+      $('ide-gutter').innerHTML = '';
+      $('ide-code').innerHTML   = '<span style="color:var(--red)">// invalid JSON</span>';
+      $('ide-endpoint-badge').textContent = endpoint || '—';
+    }
+  }
+
+  // ── init ───────────────────────────────────────────────────────────────
+  $('run-btn').addEventListener('click', startCrawl);
+  $('search-btn').addEventListener('click', runSearch);
+  $('map-run-btn').addEventListener('click', runMap);
+  $('md-close').addEventListener('click', closePanel);
+
+  // Ctrl/Cmd+Enter in any textarea runs it
+  $('crawl-json').addEventListener('keydown',  e => { if ((e.ctrlKey||e.metaKey) && e.key==='Enter') startCrawl(); });
+  $('search-json').addEventListener('keydown', e => { if ((e.ctrlKey||e.metaKey) && e.key==='Enter') runSearch(); });
+  $('map-json').addEventListener('keydown',    e => { if ((e.ctrlKey||e.metaKey) && e.key==='Enter') runMap(); });
+
+  // Init editor syntax highlighting (replaces manual input listeners)
+  initEditorHL('crawl-json',  'crawl-json-hl',  'crawl');
+  initEditorHL('search-json', 'search-json-hl', 'search');
+  initEditorHL('map-json',    'map-json-hl',    'map');
+
+  // Clear terminal
+  $('term-clear-btn').addEventListener('click', () => {
+    $('terminal-body').innerHTML = '<span class="terminal-idle">// Run a request to see it here</span>';
+    _termEmpty = true;
+  });
+
+  // Default panes
+  $('pane-search').style.display = 'none';
+  $('pane-map').style.display    = 'none';
+
+  // Populate IDE on load
+  switchTab('crawl');
+</script>
+</body>
+</html>
