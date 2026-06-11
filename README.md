@@ -18,6 +18,7 @@ Source code to accompany our YouTube video series. Find the script mentioned in 
 | Web Scraping with Browserless | [`webscraping/`](./webscraping) | `/content`, `/scrape`, `/smart-scrape`, `/unblock` |
 | Solving CAPTCHAs with Puppeteer & Playwright | [`SolveCaptchaPuppeteerPlaywright/`](./SolveCaptchaPuppeteerPlaywright) | `/unblock` (solveCaptchas) |
 | Crawl, Search & Map with Browserless | [`crawl-search-map/`](./crawl-search-map) | `/crawl`, `/search`, `/map` |
+| Amazon Bot Detection & Scraping at Scale | [`amazon-scraper/`](./amazon-scraper) | `/stealth` |
 
 ## Prerequisites
 
