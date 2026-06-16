@@ -1,0 +1,2 @@
+Use the browserless_agent. Open Google Flights at https://www.google.com/flights.
+Search for flights from Toronto (YYZ) to New York (LGA). I want to fly out on July 17. Sort by price and find the cheapest options. Summarize the top 3 cheapest weekend itineraries including dates, airlines, and prices.
