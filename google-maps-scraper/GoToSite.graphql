@@ -1,0 +1,8 @@
+mutation GoToSite {
+  goto(url: "https://www.google.com/search?q=hvac+near+san+Francisco,+california&sa=X&udm=1", waitUntil: networkIdle) {
+    status
+  }
+  reconnect(timeout: 30000){
+    browserQLEndpoint
+  }
+}
