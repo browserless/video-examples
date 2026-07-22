@@ -1,0 +1,190 @@
+mutation ScrapeTwentyPlacesThenClickNext {
+  scrapeBusinesses: evaluate(
+    timeout: 120000
+    content: """
+      const sleep = (ms) =>
+        new Promise(resolve => setTimeout(resolve, ms));
+
+      const clean = (value) =>
+        (value || "")
+          .replace(/[\u200E\u200F\u2066-\u2069]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const cardSelector =
+        '#rso [id^="pv-"][role="button"]:has([role="heading"])';
+
+      const waitForBusiness = async (expectedTitle, timeout = 10000) => {
+        const started = Date.now();
+
+        while (Date.now() - started < timeout) {
+          const currentTitle = clean(
+            document.querySelector(
+              '#local-place-viewer h2.BK5CCe'
+            )?.textContent
+          );
+
+          if (currentTitle === expectedTitle) {
+            return true;
+          }
+
+          await sleep(200);
+        }
+
+        return false;
+      };
+
+      const results = [];
+
+      for (let index = 0; index < 20; index++) {
+        // Re-query every time because Google can rerender the cards.
+        const businesses = [
+          ...document.querySelectorAll(cardSelector)
+        ];
+
+        const business = businesses[index];
+
+        if (!business) {
+          break;
+        }
+
+        const expectedTitle = clean(
+          business.querySelector('[role="heading"]')
+            ?.textContent
+        );
+
+        try {
+          business.scrollIntoView({
+            block: "center",
+            inline: "nearest"
+          });
+
+          business.click();
+
+          const loaded = await waitForBusiness(expectedTitle);
+
+          if (!loaded) {
+            throw new Error(
+              `Timed out waiting for ${expectedTitle}`
+            );
+          }
+
+          // Let the address, reviews and phone finish rendering.
+          await sleep(500);
+
+          const panel = document.querySelector(
+            "#local-place-viewer"
+          );
+
+          if (!panel) {
+            throw new Error(
+              "Business detail panel not found"
+            );
+          }
+
+          const reviewBlock = [
+            ...panel.querySelectorAll(".C9waJd")
+          ].find(element =>
+            element.querySelector(".Bye9Fc") &&
+            /reviews?/i.test(clean(element.textContent))
+          );
+
+          const rating =
+            clean(
+              reviewBlock
+                ?.querySelector(".Bye9Fc")
+                ?.childNodes?.[0]
+                ?.textContent
+            ) ||
+            clean(
+              panel.querySelector(".rGaJuf")
+                ?.textContent
+            ) ||
+            null;
+
+          const reviews = [
+            ...(reviewBlock?.querySelectorAll("span") || [])
+          ]
+            .map(element => clean(element.textContent))
+            .find(text => /reviews?/i.test(text)) ||
+            null;
+
+          const phoneLink = panel.querySelectorAll(
+            "a[data-phone-number]"
+          )[1];
+
+          const websiteLink = [
+            ...panel.querySelectorAll("a[href]")
+          ].find(element =>
+            clean(element.textContent) === "Website"
+          );
+
+          results.push({
+            index,
+
+            title:
+              clean(
+                panel.querySelector("h2.BK5CCe")
+                  ?.textContent
+              ) || expectedTitle,
+
+            address:
+              clean(
+                panel.querySelector(
+                  ".C9waJd.y7xX3d span"
+                )?.textContent
+              ) ||
+              clean(
+                panel.querySelector(
+                  ".C9waJd.y7xX3d"
+                )?.textContent
+              ) ||
+              null,
+
+            rating,
+
+            reviews,
+
+            phone:
+              clean(
+                phoneLink
+                  ?.querySelector(".C9waJd")
+                  ?.textContent
+              ) ||
+              clean(
+                phoneLink
+                  ?.getAttribute("aria-label")
+                  ?.replace(/^Call\s+/i, "")
+              ) ||
+              null,
+
+            website:
+              websiteLink?.href ||
+              null
+          });
+        } catch (error) {
+          results.push({
+            index,
+            title: expectedTitle,
+            error: error?.message || String(error)
+          });
+        }
+      }
+
+      return JSON.stringify(results);
+    """
+  ) {
+    value
+  }
+
+  nextPage: click(
+    selector: "[aria-label='Next']"
+    visible: true
+    timeout: 10000
+  ) {
+    time
+  }
+  reconnect(timeout: 30000){
+    browserQLEndpoint
+  }
+}
