@@ -1,0 +1,274 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "batchSize": 2,
+        "options": {}
+      },
+      "id": "5ee408d9-2a7d-4b35-b409-687551903e54",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -576,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/performance",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "YOUR_API_TOKEN_HERE"
+            },
+            {
+              "name": "timeout",
+              "value": "120000"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"url\":\"{{ $json.Website }}\",\"config\":{\"extends\":\"lighthouse:default\",\"settings\":{\"onlyCategories\":[\"performance\",\"seo\",\"accessibility\",\"best-practices\"]}}}",
+        "options": {
+          "timeout": 130000
+        }
+      },
+      "id": "d9eb51bd-14ff-4d6a-b407-11271d29e489",
+      "name": "Browserless Performance API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -352,
+        416
+      ],
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const lhr = $json.data && $json.data.categories ? $json.data : $json;\nconst cats = (lhr && lhr.categories) || {};\nconst audits = (lhr && lhr.audits) || {};\nconst orig = $('Loop Over Items').item.json;\nconst to100 = c => (c && typeof c.score==='number' ? Math.round(c.score*100) : '');\nconst a = id => audits[id] || {};\nconst s = ms => (typeof ms==='number' ? +(ms/1000).toFixed(2) : '');\nif (lhr.runtimeError && !(cats.performance && typeof cats.performance.score==='number')) {\n  return { json: { ...orig, perf_score:'',seo_score:'',accessibility_score:'',best_practices_score:'',lcp_s:'',tbt_ms:'',cls:'',ttfb_ms:'',potential_speedup_s:'',top_opportunities:'',\n    signal: `Website failed to load in test: ${lhr.runtimeError.message}`, audit_status: lhr.runtimeError.code||'runtimeError' } };\n}\nconst LABELS={'render-blocking-resources':'remove render-blocking scripts/CSS','uses-responsive-images':'properly size images','offscreen-images':'lazy-load offscreen images','unminified-css':'minify CSS','unminified-javascript':'minify JS','unused-css-rules':'remove unused CSS','unused-javascript':'remove unused JS','uses-optimized-images':'compress images','modern-image-formats':'serve next-gen images (WebP/AVIF)','uses-text-compression':'enable text compression','uses-long-cache-ttl':'set cache lifetimes','server-response-time':'speed up server response','redirects':'avoid landing-page redirects','efficient-animated-content':'replace GIFs with video'};\nconst opps=Object.entries(audits).map(([id,x])=>({id,ms:x.details&&typeof x.details.overallSavingsMs==='number'?x.details.overallSavingsMs:0})).filter(o=>o.ms>=150).sort((x,y)=>y.ms-x.ms);\nconst top=opps.slice(0,4).map(o=>`${LABELS[o.id]||o.id} (~${(o.ms/1000).toFixed(1)}s)`);\nconst perf=to100(cats.performance),seo=to100(cats.seo),a11y=to100(cats.accessibility);\nconst lcp=s(a('largest-contentful-paint').numericValue),tbt=a('total-blocking-time').numericValue,cls=a('cumulative-layout-shift').numericValue;\nconst p=[];\nif(perf!=='')p.push(`Page speed ${perf}/100 (${perf>=90?'good':perf>=50?'needs work':'poor'})`);\nif(lcp!==''&&lcp>2.5)p.push(`main content loads in ${lcp}s (Google flags >2.5s)`);\nif(top.length)p.push(`Quick wins: ${top.slice(0,3).join(', ')}`);\nif(seo!==''&&seo<90)p.push(`SEO ${seo}/100`);\nif(a11y!==''&&a11y<90)p.push(`Accessibility ${a11y}/100 (ADA risk)`);\nreturn { json: { ...orig, perf_score:perf,seo_score:seo,accessibility_score:a11y,best_practices_score:to100(cats['best-practices']),\n  lcp_s:lcp, tbt_ms:typeof tbt==='number'?Math.round(tbt):'', cls:typeof cls==='number'?+cls.toFixed(3):'', ttfb_ms:typeof a('server-response-time').numericValue==='number'?Math.round(a('server-response-time').numericValue):'',\n  potential_speedup_s:+(opps.reduce((t,o)=>t+o.ms,0)/1000).toFixed(1), top_opportunities:top.join(' | '),\n  signal:p.join('. ')+(p.length?'.':''), audit_status:'ok' } };"
+      },
+      "id": "5506a4b0-81eb-4704-9c77-a2f1e4d1d77c",
+      "name": "Extract Signals",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1_3SDWehtZum1Lby8vKNILCf01zullfxYZkiUBONFldE",
+          "mode": "list",
+          "cachedResultName": "Cities",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_3SDWehtZum1Lby8vKNILCf01zullfxYZkiUBONFldE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1622505339,
+          "mode": "list",
+          "cachedResultName": "Results",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_3SDWehtZum1Lby8vKNILCf01zullfxYZkiUBONFldE/edit#gid=1622505339"
+        },
+        "options": {}
+      },
+      "id": "faa214f6-4700-467c-82a9-8694cd235c9b",
+      "name": "Read Spreadsheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -768,
+        304
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "a3gQrk6QQtm83GgV",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1_3SDWehtZum1Lby8vKNILCf01zullfxYZkiUBONFldE",
+          "mode": "list",
+          "cachedResultName": "Cities",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_3SDWehtZum1Lby8vKNILCf01zullfxYZkiUBONFldE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1509236866,
+          "mode": "list",
+          "cachedResultName": "Performance",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_3SDWehtZum1Lby8vKNILCf01zullfxYZkiUBONFldE/edit#gid=1509236866"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "20c1aa19-f585-4cfd-8a70-33732022dee1",
+      "name": "Write Results to New Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -352,
+        208
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "a3gQrk6QQtm83GgV",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "423fdfe6-7a9b-4bfd-bc30-44d542a5ac33",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -944,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Connect your google sheet\n**Sample** sheet [here](https://docs.google.com/spreadsheets/d/1_3SDWehtZum1Lby8vKNILCf01zullfxYZkiUBONFldE)",
+        "height": 128
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        144
+      ],
+      "id": "723c93bd-0a5d-4905-8b15-12cd2f196bc8",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Connect your google sheet\n**Sample** sheet [here](https://docs.google.com/spreadsheets/d/1_3SDWehtZum1Lby8vKNILCf01zullfxYZkiUBONFldE)",
+        "height": 128
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        64
+      ],
+      "id": "e7d211a6-d475-48b2-b8c4-788d6c2710df",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Replace your API key\n**Signup** for a free account [here](https://www.browserless.io/signup/email?plan=free)",
+        "height": 128
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        624
+      ],
+      "id": "0cbbda4f-b5b4-40e3-85b8-596aceca7015",
+      "name": "Sticky Note2"
+    }
+  ],
+  "connections": {
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Write Results to New Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Browserless Performance API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Browserless Performance API": {
+      "main": [
+        [
+          {
+            "node": "Extract Signals",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Extract Signals": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Spreadsheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Spreadsheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "374209d58dde3cbf5707e7114aa17a9ec5fc159fd5ccd8c68404e9cad4bc1076"
+  }
+}
