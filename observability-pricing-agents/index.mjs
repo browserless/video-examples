@@ -1,3 +1,4 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { buildPrompt } from './prompt.mjs';
 
 const VENDORS = (process.env.VENDORS || [
@@ -153,7 +154,20 @@ function printResults() {
   }
 
   console.log('\nFull JSON results:\n');
-  console.log(JSON.stringify([...runs.values()].map(({ vendor, id, status, result, error }) => ({ vendor, id, status, result, error })), null, 2));
+  console.log(JSON.stringify(resultsPayload(), null, 2));
+}
+
+function resultsPayload() {
+  return [...runs.values()].map(({ vendor, id, status, result, error }) => ({ vendor, id, status, result, error }));
+}
+
+function saveResults() {
+  const dir = new URL('./results/', import.meta.url);
+  mkdirSync(dir, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const file = new URL(`pricing-${stamp}.json`, dir);
+  writeFileSync(file, JSON.stringify(resultsPayload(), null, 2));
+  console.log(`\nSaved results to ${file.pathname}`);
 }
 
 render();
@@ -161,3 +175,4 @@ console.log('\nLaunching every vendor at once…');
 await Promise.all(VENDORS.map(researchVendor));
 render();
 printResults();
+saveResults();

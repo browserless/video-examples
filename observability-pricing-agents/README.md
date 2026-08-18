@@ -38,7 +38,7 @@ BROWSERLESS_TOKEN=YOUR_TOKEN npm start
 
 There are no npm dependencies to install.
 
-The script immediately submits all 10 runs, then shows a live terminal dashboard as each agent moves through `pending`, `running`, and `succeeded`/`failed` states. When all runs finish it prints a normalized comparison table and the complete JSON output with source URLs.
+The script immediately submits all 10 runs, then shows a live terminal dashboard as each agent moves through `pending`, `running`, and `succeeded`/`failed` states. When all runs finish it prints a normalized comparison table and the complete JSON output with source URLs, and saves that JSON to a timestamped file under `results/` (gitignored).
 
 ## Customize the vendors
 
