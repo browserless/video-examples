@@ -29,7 +29,11 @@ Default vendors:
 
 ## Run it
 
-Requires Node.js 18+ and a Browserless API token.
+Requires Node.js 18+ and a Browserless API token. Your token is on your
+[account dashboard](https://account.browserless.io) — copy it from the API
+token section. The script reads it only from the `BROWSERLESS_TOKEN`
+environment variable; there is no `.env` file support, so pass it inline (or
+`export` it in your shell) and keep it out of any committed file.
 
 ```bash
 cd observability-pricing-agents
