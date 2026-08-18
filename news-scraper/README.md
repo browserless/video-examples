@@ -5,10 +5,16 @@ features to gather relevant links from a set of source sites. The output is a pl
 recent articles that can then be processed by an LLM, so an assistant has knowledge of recent
 news relevant to the user.
 
-This is a support resource for a YouTube video. In that video, a Claude Scheduled Task triggers
-this scraper, waits for the fresh CSV, and sends you a Slack DM with the links most relevant to
-your particular interests. The scraping half lives here. The Claude half is a scheduled task you
-configure separately, using the prompt in this folder.
+This is a support resource for a YouTube video. There are two halves:
+
+- **The scraper** (this folder) runs on a daily schedule and keeps `output/scraped-all-items.csv`
+  fresh. You install it once.
+- **The Claude Scheduled Task** reads that CSV, keeps the articles that match your interests, and
+  sends you a Slack DM. It is a separate scheduled task you configure with the prompt in this folder.
+
+You wire up both with two copy-paste prompts: a **setup prompt** (below) that you paste into Claude
+Code to install the scraper, and `CLAUDE_SCHEDULED_TASK_PROMPT.md`, which is the prompt you paste
+into the Claude Scheduled Task itself.
 
 ## How it works
 
@@ -30,8 +36,8 @@ configure separately, using the prompt in this folder.
 - **`export-csv.js`** — runs the scraper and writes the CSV the LLM step reads.
 - **`sources.json`** — the source sites and their CSS selectors. Edit this to add or swap sites.
 - **`setup-launchd.sh`** — one command macOS setup for a daily scheduled run.
-- **`CLAUDE_SCHEDULED_TASK_PROMPT.md`** — a ready to adapt prompt for the Claude Scheduled Task
-  that triggers this scraper, waits for the fresh CSV, and sends the Slack briefing.
+- **`CLAUDE_SCHEDULED_TASK_PROMPT.md`** — the prompt you paste into the Claude Scheduled Task. It
+  reads the CSV, filters to your topics, and sends the Slack briefing. Nothing else.
 
 ## Quick start (macOS)
 
@@ -48,10 +54,31 @@ agent, and runs one test so you watch the CSV appear. From then on it refreshes
 `SCRAPE_HOUR=7 SCRAPE_MINUTE=30 ./setup-launchd.sh`, or remove it with
 `./setup-launchd.sh --uninstall`. Logs land in `~/Library/Logs/news-scraper/`.
 
-Prefer not to run the setup by hand? Paste `CLAUDE_SCHEDULED_TASK_PROMPT.md` into Claude Code from
-this folder instead. On its first run it walks you through the same setup (dependencies, your
-token, the launchd agent, your Slack user ID), then triggers a scrape and sends the briefing. See
-[The Claude Scheduled Task](#the-claude-scheduled-task-the-llm-half) below.
+## Set it up with Claude Code (the setup prompt)
+
+Prefer not to run the setup by hand? Paste the prompt below into Claude Code from a checkout of
+this repo. It installs the daily scraper and then prints the two values you will paste into the
+briefing task: your CSV path and your Slack user ID.
+
+```
+You are setting up the news-scraper example from this repo on my Mac. Work from the repo root and
+walk me through each step, stopping to ask whenever you need me.
+
+1. If node_modules does not exist, run:  npm install
+2. If .env does not exist, run:  cp .env.example .env  — then STOP and ask me to paste my
+   BROWSERLESS_TOKEN into .env. Never type, print, or read the token yourself. Wait until I confirm.
+3. Install the daily scraper: run  ./setup-launchd.sh . It writes a launchd agent that scrapes once
+   a day and refreshes output/scraped-all-items.csv, and it runs one test scrape now. If it errors,
+   show me the error and stop.
+4. Confirm output/scraped-all-items.csv exists, then print its absolute path — I need it for the
+   briefing task.
+5. Help me find my Slack user ID: look me up by my email with the Slack user-search tool, or ask me
+   for it, and print it.
+
+When everything is in place, tell me to open CLAUDE_SCHEDULED_TASK_PROMPT.md, fill in the CSV path,
+my Slack user ID, and my topics, and paste it into a Claude Scheduled Task scheduled a little after
+the daily scrape. Do not send any Slack messages yourself.
+```
 
 ## Run it once by hand (any OS)
 
@@ -72,19 +99,17 @@ That is all an LLM needs to understand what was scraped and pick the items worth
 Some listing pages do not print an excerpt on the card, so those rows carry a title, url, and
 date but an empty excerpt. That is expected.
 
-## The Claude Scheduled Task (the LLM half)
+## The Claude Scheduled Task (the briefing prompt)
 
-The prompt in `CLAUDE_SCHEDULED_TASK_PROMPT.md` is the whole LLM half. Paste it into Claude Code
-from this folder: on the first run it handholds setup (dependencies, your Browserless token in
-`.env`, the launchd agent, and your Slack user ID), then on every run it triggers this scraper (by
-kicking the launchd agent with `launchctl kickstart`), waits for the fresh
-`output/scraped-all-items.csv`, keeps only the articles that match your interests, and DMs you the
-most relevant links on Slack. Edit your interests where the prompt says EDIT ME.
+Once the scraper is installed, create a Claude Scheduled Task and paste in the prompt from
+`CLAUDE_SCHEDULED_TASK_PROMPT.md`. Before pasting, fill in its three EDIT ME lines: the absolute
+path to your `output/scraped-all-items.csv`, your topics, and your Slack user ID. The task reads the
+CSV, keeps only the articles that match your topics, groups them, and DMs you the most relevant
+links on Slack — nothing else.
 
-Because it refreshes the data itself, you do not have to time it around the scraper's daily cron —
-once setup is done you can also drop it into a Claude Scheduled Task and schedule it whenever you
-want your briefing. The daily launchd run still keeps a recent CSV around as a backstop. You will
-need the Slack connector enabled for the send-message tool.
+Schedule it a little after the scraper's daily run (the scraper defaults to 09:00, so 09:30 is a
+safe default) so it always reads a freshly refreshed CSV. You will need the Slack connector enabled
+for the send-message tool.
 
 ## Requirements
 
