@@ -6,14 +6,15 @@ matches your interests, and sends you a Slack DM with the most relevant links. B
 the scrape, you do not have to time this task around the scraper's daily run — it always briefs on
 data it just refreshed. The daily launchd run still keeps a recent CSV around as a backstop.
 
-Before using it:
-1. Run the Quick start in this repo's `README.md` first: clone, put your `BROWSERLESS_TOKEN` in
-   `.env`, and run `./setup-launchd.sh` so the scraper's launchd agent exists. Enable the Slack
-   connector so the send-message tool is available.
-2. Edit the two things marked EDIT ME in the block below: your Slack user ID and your interests.
+You do not have to set anything up by hand first. Paste the block below into Claude Code from a
+checkout of this repo, and on the first run it walks you through setup (dependencies, your
+Browserless token, the launchd agent, and your Slack user ID), then triggers a scrape and sends
+the briefing. On later runs the setup checks pass instantly and it just refreshes and briefs. The
+one thing worth editing up front is your interests, marked EDIT ME in Step 3.
 
-Then paste the block into a Claude Scheduled Task (or run it in Claude Code on demand). Schedule it
-whenever you want your briefing — it no longer has to line up with the scraper's cron.
+You can also run it as a Claude Scheduled Task once setup is done — schedule it whenever you want
+your briefing, since it refreshes the data itself and no longer has to line up with the scraper's
+cron.
 
 ---
 
@@ -21,12 +22,29 @@ whenever you want your briefing — it no longer has to line up with the scraper
 You are running a daily news briefing for yourself. Work from a checkout of this repo
 (video-examples/news-scraper) and run every command from that folder. Complete these steps in order.
 
-## Step 0 — Setup you can rely on
-If any command or path below is unclear, read this repo's README.md for the setup details
-(Browserless token in .env, the launchd agent installed by setup-launchd.sh, and the Slack
-connector). Never print, echo, or read the token yourself. Facts you need: the scraper's launchd
-agent is labeled com.browserless.news-scraper, it runs export-csv.js, and it writes
-output/scraped-all-items.csv.
+## Step 0 — Set up on the first run (these checks are quick to repeat every run)
+Get each piece below in place, handholding me through anything that is missing. If a detail is
+unclear, read this repo's README.md. Do not skip a check just because it "should" already be done.
+
+1. Dependencies. If node_modules does not exist, run:  npm install
+
+2. Browserless token. If .env does not exist, run:  cp .env.example .env
+   Then STOP and ask me to paste my BROWSERLESS_TOKEN into .env. Do NOT type, print, echo, or read
+   the token yourself — it is a secret I add by hand. Do not continue until I confirm it is set.
+
+3. The scraper's launchd agent. Check whether it is installed:
+     launchctl list | grep com.browserless.news-scraper
+   If it is not listed, install it by running:  ./setup-launchd.sh
+   That script installs dependencies, writes and loads the launchd agent, and runs one test scrape.
+   If it prints an error, show me the error and stop; do not continue on a broken setup.
+
+4. Slack. Make sure the Slack connector is enabled so the send-message tool exists. If you do not
+   already have my Slack user ID, look me up by my email with the Slack user-search tool, or ask me
+   for it, and confirm it starts with U. The briefing is a DM to ME only — never a channel or anyone
+   else. Remember this ID for Step 5.
+
+Useful facts for later steps: the launchd agent is labeled com.browserless.news-scraper, it runs
+export-csv.js, and it writes output/scraped-all-items.csv.
 
 ## Step 1 — Trigger a fresh scrape and wait for it
 Do not brief on whatever CSV happens to be on disk. Note the current time, then kick the scraper's
@@ -81,11 +99,8 @@ the last 48 hours. If more than 10 remain, keep the 10 most recent. Group them b
 
 ## Step 5 — Send the Slack DM
 
-Send a DM to your Slack user ID using the Slack send message tool (channel is your user ID):
-
-  EDIT ME: U0XXXXXXX
-
-Format the message in Slack mrkdwn (not Markdown), like this, including only the sections that
+Send a DM to your Slack user ID from Step 0 using the Slack send message tool (channel is that user
+ID). Format the message in Slack mrkdwn (not Markdown), like this, including only the sections that
 have articles:
 
 *:rolled_up_newspaper: Daily Briefing — [Weekday, <today's date>]*
