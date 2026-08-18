@@ -46,7 +46,7 @@ if [ ! -f "$PROJECT_DIR/.env" ]; then
   echo "  # then edit .env and set BROWSERLESS_TOKEN"
   exit 1
 fi
-if ! grep -qE '^BROWSERLESS_TOKEN=.+' "$PROJECT_DIR/.env" || grep -qE '^BROWSERLESS_TOKEN=your_browserless_token_here' "$PROJECT_DIR/.env"; then
+if ! grep -qE '^BROWSERLESS_TOKEN=.+' "$PROJECT_DIR/.env" || grep -qE '^BROWSERLESS_TOKEN=your-browserless-token$' "$PROJECT_DIR/.env"; then
   echo "Set a real BROWSERLESS_TOKEN in $PROJECT_DIR/.env, then re-run."
   exit 1
 fi
