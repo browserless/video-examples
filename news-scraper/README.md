@@ -44,7 +44,7 @@ cp .env.example .env        # then open .env and paste your BROWSERLESS_TOKEN
 
 `setup-launchd.sh` detects your Node install, installs dependencies, writes and loads a launchd
 agent, and runs one test so you watch the CSV appear. From then on it refreshes
-`output/scraped-all-items.csv` every day at 06:00. Change the time with
+`output/scraped-all-items.csv` every day at 09:00. Change the time with
 `SCRAPE_HOUR=7 SCRAPE_MINUTE=30 ./setup-launchd.sh`, or remove it with
 `./setup-launchd.sh --uninstall`. Logs land in `~/Library/Logs/news-scraper/`.
 

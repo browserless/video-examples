@@ -20,7 +20,7 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 LOG_DIR="$HOME/Library/Logs/news-scraper"
 DOMAIN="gui/$(id -u)"
-HOUR="${SCRAPE_HOUR:-6}"
+HOUR="${SCRAPE_HOUR:-9}"
 MINUTE="${SCRAPE_MINUTE:-0}"
 
 uninstall() {
