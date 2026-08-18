@@ -111,6 +111,10 @@ async function pollRun(run) {
 }
 
 function parseResult(data) {
+  // /agent/run wraps the agent's output as a JSON string in `data.answer`.
+  if (data && typeof data === 'object' && typeof data.answer === 'string') {
+    data = data.answer;
+  }
   if (data && typeof data === 'object') return data;
   if (typeof data !== 'string') return data;
 
