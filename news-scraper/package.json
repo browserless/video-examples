@@ -1,0 +1,17 @@
+{
+  "name": "news-scraper",
+  "version": "1.0.0",
+  "description": "Playwright news scraper over the Browserless stealth endpoint, for a daily LLM briefing",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "scrape": "node export-csv.js",
+    "scrape:raw": "node scrape.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "playwright-core": "^1.55.1"
+  }
+}
