@@ -57,8 +57,9 @@ agent, and runs one test so you watch the CSV appear. From then on it refreshes
 ## Set it up with Claude Code (the setup prompt)
 
 Prefer not to run the setup by hand? Paste the prompt below into Claude Code from a checkout of
-this repo. It installs the daily scraper and then prints the two values you will paste into the
-briefing task: your CSV path and your Slack user ID.
+this repo. It installs the daily scraper, then hands you a finished, ready-to-paste briefing prompt
+with your CSV path, Slack user ID, and topics already filled in — so all you do is copy it into a
+Claude Scheduled Task.
 
 ```
 You are setting up the news-scraper example from this repo on my Mac. Work from the repo root and
@@ -70,14 +71,20 @@ walk me through each step, stopping to ask whenever you need me.
 3. Install the daily scraper: run  ./setup-launchd.sh . It writes a launchd agent that scrapes once
    a day and refreshes output/scraped-all-items.csv, and it runs one test scrape now. If it errors,
    show me the error and stop.
-4. Confirm output/scraped-all-items.csv exists, then print its absolute path — I need it for the
-   briefing task.
-5. Help me find my Slack user ID: look me up by my email with the Slack user-search tool, or ask me
-   for it, and print it.
+4. Confirm output/scraped-all-items.csv exists and note its absolute path.
+5. Find my Slack user ID: look me up by my email with the Slack user-search tool, or ask me for it.
+6. Ask me which topics I want in my briefing. If I do not care, keep the example topics from the
+   template.
+7. Build my ready-to-use briefing prompt from the template. Read CLAUDE_SCHEDULED_TASK_PROMPT.md and
+   replace its three EDIT ME lines: the CSV path with the absolute path from step 4, the topics with
+   my topics from step 6, and the Slack user ID with the ID from step 5. Leave no EDIT ME behind.
+   Then output the finished prompt to me in chat inside a single fenced code block, and tell me:
+   "Copy the block below and paste it into a Claude Scheduled Task, scheduled a little after the
+   daily scrape (the scraper runs at 09:00, so 09:30 is a safe default)." Remind me to enable the
+   Slack connector so the send-message tool is available.
 
-When everything is in place, tell me to open CLAUDE_SCHEDULED_TASK_PROMPT.md, fill in the CSV path,
-my Slack user ID, and my topics, and paste it into a Claude Scheduled Task scheduled a little after
-the daily scrape. Do not send any Slack messages yourself.
+Do not send any Slack messages yourself and do not run the briefing — your job is to set things up
+and produce that final prompt for me to copy.
 ```
 
 ## Run it once by hand (any OS)
@@ -101,11 +108,13 @@ date but an empty excerpt. That is expected.
 
 ## The Claude Scheduled Task (the briefing prompt)
 
-Once the scraper is installed, create a Claude Scheduled Task and paste in the prompt from
-`CLAUDE_SCHEDULED_TASK_PROMPT.md`. Before pasting, fill in its three EDIT ME lines: the absolute
-path to your `output/scraped-all-items.csv`, your topics, and your Slack user ID. The task reads the
-CSV, keeps only the articles that match your topics, groups them, and DMs you the most relevant
-links on Slack — nothing else.
+Once the scraper is installed, create a Claude Scheduled Task and paste in the briefing prompt. If
+you used the setup prompt above, it already handed you a finished version with your CSV path,
+topics, and Slack user ID filled in — just copy that. Otherwise, open
+`CLAUDE_SCHEDULED_TASK_PROMPT.md` and fill in its three EDIT ME lines yourself: the absolute path to
+your `output/scraped-all-items.csv`, your topics, and your Slack user ID. The task reads the CSV,
+keeps only the articles that match your topics, groups them, and DMs you the most relevant links on
+Slack — nothing else.
 
 Schedule it a little after the scraper's daily run (the scraper defaults to 09:00, so 09:30 is a
 safe default) so it always reads a freshly refreshed CSV. You will need the Slack connector enabled
