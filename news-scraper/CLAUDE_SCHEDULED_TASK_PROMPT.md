@@ -65,7 +65,7 @@ Send a DM to your Slack user ID using the Slack send message tool (channel is yo
 Format the message in Slack mrkdwn (not Markdown), like this, including only the sections that
 have articles:
 
-*🗞 Daily Briefing — [Weekday, Mon DD]*
+*:rolled_up_newspaper: Daily Briefing — [Weekday, <today's date>]*
 _[N] relevant articles across [M] sources_
 
 *AI Agents*
@@ -78,6 +78,8 @@ _[N] relevant articles across [M] sources_
 • <url|Title> — Source
 
 Rules:
+- Put the current date in the header, computed when the task runs, for example
+  "Tuesday, Aug 18". Do not print the literal placeholder and do not hardcode a date.
 - Only include sections that have articles.
 - If zero relevant articles were found, send a short DM saying so.
 - Use Slack's <url|display text> link format.
