@@ -11,7 +11,7 @@ Before using it, edit the three things marked EDIT ME in the block below:
 3. Your interests.
 
 Then paste the block into a Claude Scheduled Task and schedule it a little after the scraper's
-daily run (the scraper defaults to 06:00, so 07:00 is a safe default here).
+daily run (the scraper defaults to 09:00, so 09:30 is a safe default here).
 
 ---
 
