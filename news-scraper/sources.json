@@ -1,0 +1,159 @@
+{
+  "_comment": "Source sites for the news scraper. Swap freely. Each entry is selector-config only. The date strategy tells the scraper how to normalize the raw date string it pulls: iso reads an ISO datetime attribute, text parses a human string like Aug 14 2026, relative parses 6 hours ago or 37m, urlpath reads YYYY MM DD from the article link. proxy is a hint only, left null unless a site needs the residential network to render cleanly.",
+  "sources": [
+    {
+      "name": "freeCodeCamp News",
+      "url": "https://www.freecodecamp.org/news/",
+      "difficulty": "easy",
+      "listSelector": "article.post-card",
+      "fields": {
+        "title": { "selector": ".post-card-title", "attribute": null },
+        "url": { "selector": "a.post-card-image-link", "attribute": "href" },
+        "date": { "selector": "time", "attribute": "datetime", "strategy": "iso" },
+        "excerpt": { "selector": ".post-card-excerpt", "attribute": null }
+      },
+      "expected": 25,
+      "proxy": null,
+      "note": "Static Ghost blog. Everything is in the initial HTML with clean ISO timestamps."
+    },
+    {
+      "name": "dev.to",
+      "url": "https://dev.to/",
+      "difficulty": "easy",
+      "listSelector": "div.crayons-story",
+      "fields": {
+        "title": { "selector": "a.crayons-story__hidden-navigation-link", "attribute": null },
+        "url": { "selector": "a.crayons-story__hidden-navigation-link", "attribute": "href" },
+        "date": { "selector": "time", "attribute": "datetime", "strategy": "iso" },
+        "excerpt": { "selector": ".crayons-story__snippet", "attribute": null }
+      },
+      "expected": 18,
+      "proxy": null,
+      "note": "Server rendered Rails feed. Cards carry ISO time attributes but most have no snippet, so excerpt completeness is naturally lower."
+    },
+    {
+      "name": "The Hacker News",
+      "url": "https://thehackernews.com/",
+      "difficulty": "easy",
+      "listSelector": "div.body-post",
+      "fields": {
+        "title": { "selector": ".home-title", "attribute": null },
+        "url": { "selector": "a.story-link", "attribute": "href" },
+        "date": { "selector": ".item-label", "attribute": null, "strategy": "text" },
+        "excerpt": { "selector": ".home-desc", "attribute": null }
+      },
+      "expected": 12,
+      "proxy": null,
+      "note": "Server rendered security blog. Dates are a human string like Aug 14 2026 rather than a machine attribute."
+    },
+    {
+      "name": "Smashing Magazine",
+      "url": "https://www.smashingmagazine.com/articles/",
+      "difficulty": "medium",
+      "listSelector": "article",
+      "fields": {
+        "title": { "selector": "h2 a", "attribute": null },
+        "url": { "selector": "h2 a", "attribute": "href" },
+        "date": { "selector": "time", "attribute": "datetime", "strategy": "iso" },
+        "excerpt": { "selector": ".article--post__teaser", "attribute": null }
+      },
+      "expected": 10,
+      "proxy": null,
+      "note": "Static Netlify build but the card markup wraps the author first, so the title needs a specific heading selector."
+    },
+    {
+      "name": "Ars Technica",
+      "url": "https://arstechnica.com/",
+      "difficulty": "medium",
+      "listSelector": "article",
+      "fields": {
+        "title": { "selector": "h2", "attribute": null },
+        "url": { "selector": "a", "attribute": "href" },
+        "date": { "selector": "time", "attribute": "datetime", "strategy": "iso" },
+        "excerpt": { "selector": ".excerpt", "attribute": null }
+      },
+      "expected": 20,
+      "proxy": null,
+      "note": "Mixed front page. ISO timestamps are clean but excerpts appear on only some cards."
+    },
+    {
+      "name": "The Register",
+      "url": "https://www.theregister.com/",
+      "difficulty": "medium",
+      "listSelector": "article:has(h2.headline)",
+      "fields": {
+        "title": { "selector": "h2.headline", "attribute": null },
+        "url": { "selector": "a[itemprop='url']", "attribute": "href" },
+        "date": { "selector": "time", "attribute": "datetime", "strategy": "iso" },
+        "excerpt": { "selector": ".standfirst", "attribute": null }
+      },
+      "expected": 30,
+      "proxy": null,
+      "waitUntil": "networkIdle",
+      "note": "High volume front page that repeats headlines across sections, so results must be de-duplicated by URL. It renders unevenly from a datacenter IP on a quick signal, so it waits for networkIdle to settle before reading."
+    },
+    {
+      "name": "TechCrunch",
+      "url": "https://techcrunch.com/latest/",
+      "difficulty": "medium",
+      "listSelector": "li.wp-block-post",
+      "fields": {
+        "title": { "selector": "a.loop-card__title-link", "attribute": null },
+        "url": { "selector": "a.loop-card__title-link", "attribute": "href" },
+        "date": { "selector": "time", "attribute": "datetime", "strategy": "iso" },
+        "excerpt": { "selector": ".loop-card__description", "attribute": null }
+      },
+      "expected": 20,
+      "proxy": null,
+      "waitUntil": "domContentLoaded",
+      "note": "WordPress VIP with a heavy page. The trackers keep the network busy so networkIdle never settles. It loads fast on domContentLoaded and the cards are in the initial HTML, so we gate on the title selector instead of waiting for idle."
+    },
+    {
+      "name": "Vercel Blog",
+      "url": "https://vercel.com/blog",
+      "difficulty": "medium",
+      "listSelector": "article:has(h2)",
+      "fields": {
+        "title": { "selector": "h2", "attribute": null },
+        "url": { "selector": "a", "attribute": "href" },
+        "date": { "selector": "time", "attribute": "datetime", "strategy": "iso" },
+        "excerpt": { "selector": "p", "attribute": null }
+      },
+      "expected": 12,
+      "proxy": null,
+      "waitUntil": "networkIdle",
+      "note": "Next.js app. The article links ship in the shell but the publish dates only appear after client hydration, so this one waits for networkIdle rather than domContentLoaded."
+    },
+    {
+      "name": "9to5Mac",
+      "url": "https://9to5mac.com/",
+      "difficulty": "medium",
+      "listSelector": "article",
+      "fields": {
+        "title": { "selector": "h1 a, h2 a", "attribute": null },
+        "url": { "selector": "h1 a, h2 a", "attribute": "href" },
+        "date": { "selector": "a", "attribute": "href", "strategy": "urlpath" },
+        "excerpt": { "selector": ".post-block__content", "attribute": null }
+      },
+      "expected": 20,
+      "proxy": null,
+      "note": "WordPress theme that shows a relative date on cards. The reliable machine date is the YYYY MM DD in the article URL."
+    },
+    {
+      "name": "Cointelegraph",
+      "url": "https://cointelegraph.com/",
+      "difficulty": "hard",
+      "listSelector": "article:has(h3[data-testid='post-latest-card__title'])",
+      "fields": {
+        "title": { "selector": "h3[data-testid='post-latest-card__title']", "attribute": null },
+        "url": { "selector": "a", "attribute": "href" },
+        "date": { "selector": "[data-testid='post-latest-card__time']", "attribute": null, "strategy": "relative" },
+        "excerpt": { "selector": ".post-card-inline__text", "attribute": null }
+      },
+      "expected": 20,
+      "proxy": null,
+      "waitUntil": "networkIdle",
+      "note": "Behind the Cloudflare network with a heavy client rendered feed, so it waits for networkIdle. Dates are relative strings like 37m or 5 hours, which force a compute-from-now step. Flip proxy to residential if the datacenter IP starts getting soft blocked."
+    }
+  ]
+}

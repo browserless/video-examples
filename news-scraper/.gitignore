@@ -1,0 +1,6 @@
+node_modules/
+.env
+output/
+results-playwright.json
+*.log
+.DS_Store
