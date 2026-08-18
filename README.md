@@ -12,6 +12,7 @@ Source code to accompany our YouTube video series. Find the script mentioned in 
 
 | Video | Folder | Endpoints |
 |-------|--------|-----------|
+| Observability Pricing — 10 Browser Agents in Parallel | [`observability-pricing-agents/`](./observability-pricing-agents) | `/agent/run` |
 | Handling 2FA with Browserless LiveURL | [`hybrid-2fa/`](./hybrid-2fa) | LiveURL |
 | Persisting State — Session Management | [`persisting-state/`](./persisting-state) | Sessions |
 | Standard Sessions — Session Management | [`standard-sessions/`](./standard-sessions) | Sessions |
