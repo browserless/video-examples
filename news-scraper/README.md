@@ -5,10 +5,10 @@ features to gather relevant links from a set of source sites. The output is a pl
 recent articles that can then be processed by an LLM, so an assistant has knowledge of recent
 news relevant to the user.
 
-This is a support resource for a YouTube video. In that video, a Claude Scheduled Task processes
-the scraped CSV and sends you a Slack DM with the links most relevant to your particular
-interests. The scraping half lives here. The Claude half is a scheduled task you configure
-separately, pointed at the CSV this scraper produces.
+This is a support resource for a YouTube video. In that video, a Claude Scheduled Task triggers
+this scraper, waits for the fresh CSV, and sends you a Slack DM with the links most relevant to
+your particular interests. The scraping half lives here. The Claude half is a scheduled task you
+configure separately, using the prompt in this folder.
 
 ## How it works
 
@@ -31,7 +31,7 @@ separately, pointed at the CSV this scraper produces.
 - **`sources.json`** — the source sites and their CSS selectors. Edit this to add or swap sites.
 - **`setup-launchd.sh`** — one command macOS setup for a daily scheduled run.
 - **`CLAUDE_SCHEDULED_TASK_PROMPT.md`** — a ready to adapt prompt for the Claude Scheduled Task
-  that reads the CSV and sends the Slack briefing.
+  that triggers this scraper, waits for the fresh CSV, and sends the Slack briefing.
 
 ## Quick start (macOS)
 
@@ -69,11 +69,13 @@ date but an empty excerpt. That is expected.
 
 ## The Claude Scheduled Task (the LLM half)
 
-Configure a Claude Scheduled Task with the prompt in `CLAUDE_SCHEDULED_TASK_PROMPT.md`. It reads
-the CSV this scraper writes, keeps only the articles that match your interests, and DMs you the
-most relevant links on Slack. Point it at the absolute path of `output/scraped-all-items.csv` on
-your machine, and schedule it a little after the scraper's daily run so it always reads fresh
-data.
+Configure a Claude Scheduled Task with the prompt in `CLAUDE_SCHEDULED_TASK_PROMPT.md`. On each run
+it triggers this scraper (by kicking the launchd agent with `launchctl kickstart`), waits for the
+fresh `output/scraped-all-items.csv`, keeps only the articles that match your interests, and DMs
+you the most relevant links on Slack. Because it refreshes the data itself, you do not have to time
+it around the scraper's daily cron — schedule it whenever you want your briefing. The daily launchd
+run still keeps a recent CSV around as a backstop. The task needs this repo checked out, the
+launchd agent installed (`./setup-launchd.sh`), and the Slack connector enabled.
 
 ## Requirements
 
