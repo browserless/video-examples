@@ -118,7 +118,7 @@ if [ -f "$CSV" ]; then
   echo "  $CSV"
   echo ""
   echo "It will now refresh automatically every day at $(printf '%02d:%02d' "$HOUR" "$MINUTE")."
-  echo "Your Claude Scheduled Task will trigger this scraper and read that CSV to build the briefing."
+  echo "Point your Claude Scheduled Task at that CSV path to build the briefing."
 else
   echo ""
   echo "The test run did not produce a CSV. Check the logs:"
