@@ -48,6 +48,11 @@ agent, and runs one test so you watch the CSV appear. From then on it refreshes
 `SCRAPE_HOUR=7 SCRAPE_MINUTE=30 ./setup-launchd.sh`, or remove it with
 `./setup-launchd.sh --uninstall`. Logs land in `~/Library/Logs/news-scraper/`.
 
+Prefer not to run the setup by hand? Paste `CLAUDE_SCHEDULED_TASK_PROMPT.md` into Claude Code from
+this folder instead. On its first run it walks you through the same setup (dependencies, your
+token, the launchd agent, your Slack user ID), then triggers a scrape and sends the briefing. See
+[The Claude Scheduled Task](#the-claude-scheduled-task-the-llm-half) below.
+
 ## Run it once by hand (any OS)
 
 ```bash
@@ -69,13 +74,17 @@ date but an empty excerpt. That is expected.
 
 ## The Claude Scheduled Task (the LLM half)
 
-Configure a Claude Scheduled Task with the prompt in `CLAUDE_SCHEDULED_TASK_PROMPT.md`. On each run
-it triggers this scraper (by kicking the launchd agent with `launchctl kickstart`), waits for the
-fresh `output/scraped-all-items.csv`, keeps only the articles that match your interests, and DMs
-you the most relevant links on Slack. Because it refreshes the data itself, you do not have to time
-it around the scraper's daily cron — schedule it whenever you want your briefing. The daily launchd
-run still keeps a recent CSV around as a backstop. The task needs this repo checked out, the
-launchd agent installed (`./setup-launchd.sh`), and the Slack connector enabled.
+The prompt in `CLAUDE_SCHEDULED_TASK_PROMPT.md` is the whole LLM half. Paste it into Claude Code
+from this folder: on the first run it handholds setup (dependencies, your Browserless token in
+`.env`, the launchd agent, and your Slack user ID), then on every run it triggers this scraper (by
+kicking the launchd agent with `launchctl kickstart`), waits for the fresh
+`output/scraped-all-items.csv`, keeps only the articles that match your interests, and DMs you the
+most relevant links on Slack. Edit your interests where the prompt says EDIT ME.
+
+Because it refreshes the data itself, you do not have to time it around the scraper's daily cron —
+once setup is done you can also drop it into a Claude Scheduled Task and schedule it whenever you
+want your briefing. The daily launchd run still keeps a recent CSV around as a backstop. You will
+need the Slack connector enabled for the send-message tool.
 
 ## Requirements
 
