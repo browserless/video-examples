@@ -7,11 +7,6 @@ const VENDORS = (process.env.VENDORS || [
   'Grafana Cloud',
   'Dynatrace',
   'Splunk Observability Cloud',
-  'Elastic Observability',
-  'Sentry',
-  'Honeycomb',
-  'Better Stack',
-  'Coralogix',
 ].join(','))
   .split(',')
   .map((vendor) => vendor.trim())
@@ -52,7 +47,7 @@ function money(value) {
 
 function render() {
   console.clear();
-  console.log('OBSERVABILITY PRICING — 10 BROWSER AGENTS IN PARALLEL');
+  console.log(`OBSERVABILITY PRICING — ${runs.size} BROWSER AGENTS IN PARALLEL`);
   console.log('Scenario: 20 engineers · 50 hosts · 100 GB logs/month · 30-day retention\n');
   console.log(`${'VENDOR'.padEnd(27)} ${'STATUS'.padEnd(11)} LATEST STEP`);
   console.log('─'.repeat(100));

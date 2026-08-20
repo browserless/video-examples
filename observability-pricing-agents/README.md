@@ -1,6 +1,6 @@
 # Observability Pricing — Parallel Agent Runs
 
-A video-friendly demo of Browserless `/agent/run`: send the same research task to 10 independent browser agents at once, poll their progress, and normalize the results into one pricing comparison.
+A video-friendly demo of Browserless `/agent/run`: send the same research task to 5 independent browser agents at once, poll their progress, and normalize the results into one pricing comparison.
 
 ## What it researches
 
@@ -21,11 +21,6 @@ Default vendors:
 3. Grafana Cloud
 4. Dynatrace
 5. Splunk Observability Cloud
-6. Elastic Observability
-7. Sentry
-8. Honeycomb
-9. Better Stack
-10. Coralogix
 
 ## Run it
 
@@ -42,7 +37,7 @@ BROWSERLESS_TOKEN=YOUR_TOKEN npm start
 
 There are no npm dependencies to install.
 
-The script immediately submits all 10 runs, then shows a live terminal dashboard as each agent moves through `pending`, `running`, and `succeeded`/`failed` states. When all runs finish it prints a normalized comparison table and the complete JSON output with source URLs, and saves that JSON to a timestamped file under `results/` (gitignored).
+The script immediately submits all 5 runs, then shows a live terminal dashboard as each agent moves through `pending`, `running`, and `succeeded`/`failed` states. When all runs finish it prints a normalized comparison table and the complete JSON output with source URLs, and saves that JSON to a timestamped file under `results/` (gitignored).
 
 ## Customize the vendors
 
@@ -72,7 +67,7 @@ A simple recording sequence:
 1. Show the vendor array in `index.mjs`.
 2. Show `Promise.all(VENDORS.map(researchVendor))` — this is the fan-out moment.
 3. Run the script.
-4. Let the 10 rows visibly progress independently.
+4. Let the 5 rows visibly progress independently.
 5. Cut to the final normalized table.
 6. Open one returned `pricing_sources` URL to show that the answer came from the vendor's own site.
 
