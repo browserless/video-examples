@@ -39,7 +39,8 @@ async function capture(emulationOs, label) {
   const browser = await chromium.connectOverCDP(endpoint)
   try {
     // Use the page Browserless already provisioned, so the device metrics apply.
-    const page = browser.contexts()[0].pages()[0]
+    const page = browser.contexts()[0]?.pages()[0]
+    if (!page) throw new Error('no pre-provisioned page on the session — cannot apply device metrics')
 
     await page.goto(SITE, { waitUntil: 'load' })
     // The screenshot is the point, so wait for the product images rather than a fixed sleep.

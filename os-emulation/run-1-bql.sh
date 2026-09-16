@@ -77,5 +77,12 @@ fi
 echo "Identity the detector saw:"
 # .identity.value is a JSON string produced by evaluate(), so parse it with fromjson.
 printf '%s' "$BODY" | jq '.data.identity.value | fromjson'
-printf '%s' "$BODY" | jq -r '.data.screenshot.base64' | base64 -d > "$DIR/bql-$OS.png"
+
+# base64 -d happily decodes the literal "null", so check before writing a corrupt PNG.
+SHOT="$(printf '%s' "$BODY" | jq -r '.data.screenshot.base64 // empty')"
+if [ -z "$SHOT" ]; then
+  echo "No screenshot in the response — nothing written." >&2
+  exit 1
+fi
+printf '%s' "$SHOT" | base64 -d > "$DIR/bql-$OS.png"
 echo "✓ saved bql-$OS.png (bot.sannysoft.com — all signals green)"
