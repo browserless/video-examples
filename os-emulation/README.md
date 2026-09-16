@@ -34,12 +34,15 @@ npm install
 cp .env.example .env        # then open .env and paste your BROWSERLESS_TOKEN
 ```
 
-Script 1 also needs [`jq`](https://jqlang.github.io/jq/) (`brew install jq` on macOS,
-`sudo apt install jq` on Linux). `curl` and `base64` already ship with macOS and Linux.
+Script 1 is a bash script and also needs [`jq`](https://jqlang.github.io/jq/)
+(`brew install jq` on macOS, `sudo apt install jq` on Linux). `curl` and `base64` already ship
+with macOS and Linux.
+
+To point either script at a different region or a self-hosted instance, set `BROWSERLESS_BASE`
+in `.env` — an https URL, which the Playwright script converts to wss itself.
 
 ```bash
 # Script 1 — BrowserQL: OS identity + clean detection signals
-chmod +x run-1-bql.sh
 ./run-1-bql.sh windows      # try: macos | linux | android
 
 # Script 2 — Playwright: desktop and mobile from the same code
@@ -92,8 +95,10 @@ and 448 with matching pixel ratios are all normal.
 
 ## Notes
 
-- **Lowercase only.** A capital `Windows` returns HTTP 400. Invalid values are rejected, not
-  silently ignored.
+- **Lowercase only.** `run-1-bql.sh` checks the value before it sends anything, so a capital
+  `Windows` fails instantly. Send one anyway and the API returns HTTP 400 — invalid values are
+  rejected, not silently ignored, so a typo can never leave you with a browser that quietly
+  isn't emulating anything.
 - **Stealth routes only.** `emulationOs` is accepted on `/chromium/bql` and `/chromium/stealth`.
   Plain `/chromium` and the REST APIs return 400.
 - **Use the provisioned page.** Script 2 reads `contexts()[0].pages()[0]` rather than calling
@@ -107,5 +112,5 @@ and 448 with matching pixel ratios are all normal.
 ## Requirements
 
 - Node 18 or newer (Script 2)
-- `jq` (Script 1)
+- bash and `jq` (Script 1)
 - A [Browserless](https://browserless.io) API token

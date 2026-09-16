@@ -6,9 +6,6 @@
   "engines": {
     "node": ">=18"
   },
-  "scripts": {
-    "baas": "node 2-playwright-baas.mjs"
-  },
   "dependencies": {
     "dotenv": "^16.5.0",
     "playwright-core": "^1.55.1"
