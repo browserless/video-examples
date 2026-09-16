@@ -14,15 +14,26 @@ Two scripts, each showing the beat it demonstrates best:
 
 - **Script 1 (BrowserQL)** → `bot.sannysoft.com`. Proves the OS identity is coherent and that
   every bot-detection check comes back green. The anti-detection story.
-- **Script 2 (Playwright)** → `scraping-sandbox.netlify.app/products`. A responsive page, so
+- **Script 2 (BAP)** → `scraping-sandbox.netlify.app/products`. A responsive page, so
   the layout visibly reflows from desktop to mobile. The auto-scale story.
+
+### What is BAP?
+
+**BAP** (Browser Automation Protocol) is Browserless's own automation protocol. Rather than
+speaking CDP to a remote Chrome, the SDK speaks BrowserQL over a single WebSocket and hands you
+a familiar Puppeteer-shaped API — `newPage`, `goto`, `evaluate`, `screenshot`.
+
+It's the natural fit for this example because **BAP only connects to `/bql` endpoints, and those
+are stealth routes**. `emulationOs` is rejected on plain CDP routes like `/chromium`, so driving
+this over CDP means remembering to pick the stealth endpoint yourself. With BAP you're on a
+stealth route by construction — there's no non-stealth route to get wrong.
 
 ## Files
 
 - **`1-bql-os-emulation.graphql`** — the BrowserQL mutation: navigate, read back the identity
   the page sees, and screenshot the detection table.
 - **`run-1-bql.sh`** — runs that mutation for one OS, prints the identity, saves the screenshot.
-- **`2-playwright-baas.mjs`** — connects Playwright over CDP to the stealth endpoint and captures
+- **`2-bap-os-emulation.mjs`** — connects the BAP SDK to the stealth `/bql` endpoint and captures
   the same page twice, as Windows desktop and as an Android phone.
 
 ## Quick start
@@ -39,19 +50,19 @@ Script 1 is a bash script and also needs [`jq`](https://jqlang.github.io/jq/)
 with macOS and Linux.
 
 To point either script at a different region or a self-hosted instance, set `BROWSERLESS_BASE`
-in `.env` — an https URL, which the Playwright script converts to wss itself.
+in `.env` — an https URL, which the BAP script converts to wss itself.
 
 ```bash
 # Script 1 — BrowserQL: OS identity + clean detection signals
 ./run-1-bql.sh windows      # try: macos | linux | android
 
-# Script 2 — Playwright: desktop and mobile from the same code
-node 2-playwright-baas.mjs
+# Script 2 — BAP: desktop and mobile from the same code
+node 2-bap-os-emulation.mjs
 ```
 
-You don't need a local Chrome. Both scripts drive a remote browser, which is why Script 2 uses
-`playwright-core` — it skips Playwright's ~1 GB browser download and installs in a couple of
-seconds.
+You don't need a local Chrome. Both scripts drive a remote browser, and the BAP SDK
+(`@browserless.io/bap-ts`) is a thin WebSocket client — no bundled browser, so it installs in a
+couple of seconds.
 
 ## What you should see
 
@@ -81,8 +92,8 @@ GPU and font stack rasterizes differently.
 **Script 2** prints one line per device and saves a screenshot of each:
 
 ```
-pw-desktop-windows platform=Win32          width=1920px  dpr=1     touch=0
-pw-mobile-android  platform=Linux armv8l   width= 412px  dpr=2.625 touch=5
+bap-desktop-windows platform=Win32          width=2048px  dpr=1.25   touch=0
+bap-mobile-android  platform=Linux armv8l   width= 384px  dpr=3.75   touch=5
 ```
 
 Same URL, same code, one word different. The desktop capture is a four-column product grid; the
@@ -101,8 +112,13 @@ and 448 with matching pixel ratios are all normal.
   isn't emulating anything.
 - **Stealth routes only.** `emulationOs` is accepted on `/chromium/bql` and `/chromium/stealth`.
   Plain `/chromium` and the REST APIs return 400.
-- **Use the provisioned page.** Script 2 reads `contexts()[0].pages()[0]` rather than calling
-  `newPage()`, because the device metrics are applied to the page Browserless already opened.
+- **`newPage()` is what provisions the session.** `Browserless.connect()` opens no socket; the
+  WebSocket opens on `newPage()`, so the emulated device metrics are already applied to the page
+  it hands back. The SDK appends `&token=` when the endpoint already carries a query string,
+  which is why `emulationOs` can live directly in the endpoint URL.
+- **Lazy images and `waitForImages`.** The sandbox lazy-loads its product images, so the ones
+  below the fold never enter the viewport and `waitForImages` can never finish at a narrow mobile
+  width. Script 2 bounds that wait and falls back to an immediate capture.
 - **Android on Script 1.** sannysoft is a very tall page, and a full-page screenshot at an
   Android viewport can bump the 30s cap. Desktop OSes are the reliable pick there; Android is
   Script 2's job.
