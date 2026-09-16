@@ -1,0 +1,23 @@
+# BrowserQL — OS Emulation
+#
+# POST to a STEALTH BQL route, and add ONE query param: emulationOs
+#   https://production-sfo.browserless.io/chromium/bql?token=YOUR_API_TOKEN_HERE&emulationOs=windows
+#
+# Swap that one word to become a different machine — top to bottom:
+#   windows | macos | linux | android   (lowercase only)
+
+mutation OsEmulation {
+  goto(url: "https://bot.sannysoft.com", waitUntil: firstMeaningfulPaint) {
+    status
+  }
+
+  # What identity does the detector actually see? (one coherent OS, top to bottom)
+  identity: evaluate(content: "JSON.stringify({ os: navigator.userAgentData.platform, ua: navigator.userAgent, gpu: (g => g.getParameter(g.getExtension('WEBGL_debug_renderer_info').UNMASKED_RENDERER_WEBGL))(document.createElement('canvas').getContext('webgl')) })") {
+    value
+  }
+
+  # Capture the bot-detection table — every check green under the emulated OS
+  screenshot(fullPage: true, type: png) {
+    base64
+  }
+}
