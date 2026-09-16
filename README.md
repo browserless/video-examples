@@ -22,6 +22,7 @@ Source code to accompany our YouTube video series. Find the script mentioned in 
 | Crawl, Search & Map with Browserless | [`crawl-search-map/`](./crawl-search-map) | `/crawl`, `/search`, `/map` |
 | Amazon Bot Detection & Scraping at Scale | [`amazon-scraper/`](./amazon-scraper) | `/stealth` |
 | News Scraper — daily briefing with Claude Scheduler | [`news-scraper/`](./news-scraper) | `/chromium/stealth` |
+| OS Emulation — one param for a full device identity | [`os-emulation/`](./os-emulation) | `/chromium/bql`, `/chromium/stealth` |
 
 ## Prerequisites
 
