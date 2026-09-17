@@ -10,12 +10,14 @@ Values (lowercase only): `windows` · `macos` · `linux` · `android`
 Only works on **stealth routes** — `/*/bql`, `/stealth`, `/chromium/stealth`. Plain routes
 and the REST APIs reject it.
 
-Two scripts, each showing the beat it demonstrates best:
+Three scripts, each showing the beat it demonstrates best:
 
 - **Script 1 (BrowserQL)** → `bot.sannysoft.com`. Proves the OS identity is coherent and that
   every bot-detection check comes back green. The anti-detection story.
 - **Script 2 (BAP)** → `scraping-sandbox.netlify.app/products`. A responsive page, so
   the layout visibly reflows from desktop to mobile. The auto-scale story.
+- **Script 3 (Playwright)** → the same page as script 2, over CDP instead. The same result
+  through a library you may already be using.
 
 ### What is BAP?
 
@@ -35,6 +37,8 @@ stealth route by construction — there's no non-stealth route to get wrong.
 - **`run-1-bql.sh`** — runs that mutation for one OS, prints the identity, saves the screenshot.
 - **`2-bap-os-emulation.mjs`** — connects the BAP SDK to the stealth `/bql` endpoint and captures
   the same page twice, as Windows desktop and as an Android phone.
+- **`3-playwright-baas.mjs`** — the same capture over CDP with Playwright. Its header carries the
+  BAP equivalent of the connect-and-capture, so you can switch without opening another file.
 
 ## Quick start
 
@@ -58,11 +62,23 @@ in `.env` — an https URL, which the BAP script converts to wss itself.
 
 # Script 2 — BAP: desktop and mobile from the same code
 node 2-bap-os-emulation.mjs
+
+# Script 3 — the same thing over CDP, if you'd rather drive it with Playwright
+node 3-playwright-baas.mjs
 ```
 
-You don't need a local Chrome. Both scripts drive a remote browser, and the BAP SDK
-(`@browserless.io/bap-ts`) is a thin WebSocket client — no bundled browser, so it installs in a
-couple of seconds.
+You don't need a local Chrome. Every script drives a remote browser: the BAP SDK
+(`@browserless.io/bap-ts`) is a thin WebSocket client, and script 3 uses `playwright-core`, which
+skips Playwright's ~1 GB browser download. Both install in a couple of seconds.
+
+### BAP or Playwright?
+
+Reach for **BAP** by default. It only connects to `/bql`, so you land on a stealth route by
+construction, and it drops the CDP handshake for a single WebSocket.
+
+Reach for **Playwright** (script 3) when you already have Playwright code, or you need an API BAP
+doesn't cover. Just remember the trap the CDP route brings with it: `emulationOs` is rejected on
+plain `/chromium`, so you have to pick `/chromium/stealth` yourself.
 
 ## What you should see
 
@@ -89,12 +105,15 @@ OS. Further down, the Canvas rows report the same fingerprint hash across all fi
 including the sandboxed iframes — and that hash changes when you switch OS, because a different
 GPU and font stack rasterizes differently.
 
-**Script 2** prints one line per device and saves a screenshot of each:
+**Scripts 2 and 3** each print one line per device and save a screenshot of each. Script 2:
 
 ```
 bap-desktop-windows platform=Win32          width=2048px  dpr=1.25   touch=0
 bap-mobile-android  platform=Linux armv8l   width= 384px  dpr=3.75   touch=5
 ```
+
+Script 3 prints the same shape with a `pw-` prefix, and writes `pw-*.png` — so you can run both
+and compare the captures side by side.
 
 Same URL, same code, one word different. The desktop capture is a four-column product grid; the
 Android capture is a single stacked column with a collapsed header. The viewport, pixel ratio,
@@ -116,17 +135,21 @@ and 448 with matching pixel ratios are all normal.
   WebSocket opens on `newPage()`, so the emulated device metrics are already applied to the page
   it hands back. The SDK appends `&token=` when the endpoint already carries a query string,
   which is why `emulationOs` can live directly in the endpoint URL.
-- **Lazy images and `waitForImages`.** The sandbox lazy-loads its product images, so the ones
-  below the fold never enter the viewport and `waitForImages` can never finish at a narrow mobile
-  width. Script 2 bounds that wait and falls back to an immediate capture.
+- **Use the provisioned page (script 3).** Playwright reads `contexts()[0].pages()[0]` rather
+  than calling `newPage()`, because the device metrics are applied to the page Browserless already
+  opened. BAP has no such trap — its `newPage()` is what provisions the session.
+- **Lazy images.** The sandbox lazy-loads its product images, so the ones below the fold never
+  enter the viewport and never finish loading — at a narrow mobile width, a wait-for-all-images
+  can never complete. Script 2 bounds `waitForImages` and falls back to an immediate capture;
+  script 3 lets its `waitForFunction` time out and carries on.
 - **Android on Script 1.** sannysoft is a very tall page, and a full-page screenshot at an
   Android viewport can bump the 30s cap. Desktop OSes are the reliable pick there; Android is
-  Script 2's job.
+  the job of scripts 2 and 3.
 - **What it does not change:** timezone, locale and `Accept-Language`, WebRTC, or the TCP/IP
   network stack. Pair it with a region-matched or mobile proxy when you need those to agree too.
 
 ## Requirements
 
-- Node 18 or newer (Script 2)
+- Node 18 or newer (Scripts 2 and 3)
 - bash and `jq` (Script 1)
 - A [Browserless](https://browserless.io) API token
