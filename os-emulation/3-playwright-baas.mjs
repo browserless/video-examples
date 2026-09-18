@@ -4,10 +4,27 @@
 // The SAME code runs as a desktop Windows browser or a mobile Android phone —
 // the viewport, DPR and touch all auto-scale from that one word.
 //
+// This is the CDP route. Reach for it when you already have Playwright code, or need
+// Playwright APIs that BAP doesn't cover. Note the one catch it brings with it:
+// emulationOs is rejected on the plain /chromium route, so you MUST pick a stealth
+// endpoint yourself. Script 2 avoids that trap — BAP only connects to /bql, which is
+// always stealth. See the BAP equivalent of the connect-and-capture below:
+//
+//   import Browserless from '@browserless.io/bap-ts'
+//
+//   const browser = Browserless.connect({
+//     browserWSEndpoint: `wss://production-sfo.browserless.io/chromium/bql?emulationOs=${emulationOs}`,
+//     token: TOKEN,
+//   })
+//   const page = await browser.newPage()      // opens the socket + provisions the session
+//   await page.goto(SITE, { waitUntil: 'load' })
+//   await page.screenshot({ path: `${label}.png`, type: 'png' })
+//   await browser.close()
+//
 // Run:
 //   npm install
 //   cp .env.example .env     # paste your token into .env
-//   node 2-playwright-baas.mjs
+//   node 3-playwright-baas.mjs
 import { chromium } from 'playwright-core'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -25,7 +42,7 @@ if (!TOKEN) {
   console.error('Copy the example env file and paste your token into it:')
   console.error('  cp .env.example .env')
   console.error('Or set it inline:')
-  console.error('  BROWSERLESS_TOKEN=your_token node 2-playwright-baas.mjs\n')
+  console.error('  BROWSERLESS_TOKEN=your_token node 3-playwright-baas.mjs\n')
   process.exit(1)
 }
 
@@ -44,9 +61,12 @@ async function capture(emulationOs, label) {
 
     await page.goto(SITE, { waitUntil: 'load' })
     // The screenshot is the point, so wait for the product images rather than a fixed sleep.
+    // The sandbox lazy-loads its product images, so the ones below the fold never enter the
+    // viewport and never complete — at a narrow mobile width this wait ALWAYS runs out. That is
+    // fine: the catch keeps a slow (or never-loading) image from costing us the capture.
     await page
       .waitForFunction(() => [...document.images].every((img) => img.complete), null, { timeout: 10000 })
-      .catch(() => {}) // a slow image should not cost us the capture
+      .catch(() => {})
 
     const info = await page.evaluate(() => ({
       platform: navigator.platform,

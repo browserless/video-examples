@@ -7,6 +7,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@browserless.io/bap-ts": "^1.5.0",
     "dotenv": "^16.5.0",
     "playwright-core": "^1.55.1"
   }
