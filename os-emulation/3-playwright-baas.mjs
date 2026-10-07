@@ -6,7 +6,7 @@
 //
 // This is the CDP route. Reach for it when you already have Playwright code, or need
 // Playwright APIs that BAP doesn't cover. Note the one catch it brings with it:
-// emulationOs is rejected on the plain /chromium route, so you MUST pick a stealth
+// emulationOs is silently ignored on the plain /chromium route, so you MUST pick a stealth
 // endpoint yourself. Script 2 avoids that trap — BAP only connects to /bql, which is
 // always stealth. See the BAP equivalent of the connect-and-capture below:
 //

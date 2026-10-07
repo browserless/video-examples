@@ -7,8 +7,9 @@ device's viewport, pixel ratio, and touch points.
 
 Values (lowercase only): `windows` · `macos` · `linux` · `android`
 
-Only works on **stealth routes** — `/*/bql`, `/stealth`, `/chromium/stealth`. Plain routes
-and the REST APIs reject it.
+Works on the **stealth routes** — `/*/bql`, `/stealth`, `/chromium/stealth` — and on
+`/unblock`, `/smart-scrape` and `/chromium/agent`. Anywhere else, including plain `/chromium`,
+it's silently ignored: no error, just the default Linux identity.
 
 Three scripts, each showing the beat it demonstrates best:
 
@@ -26,7 +27,7 @@ speaking CDP to a remote Chrome, the SDK speaks BrowserQL over a single WebSocke
 a familiar Puppeteer-shaped API — `newPage`, `goto`, `evaluate`, `screenshot`.
 
 It's the natural fit for this example because **BAP only connects to `/bql` endpoints, and those
-are stealth routes**. `emulationOs` is rejected on plain CDP routes like `/chromium`, so driving
+are stealth routes**. `emulationOs` is silently ignored on plain CDP routes like `/chromium`, so driving
 this over CDP means remembering to pick the stealth endpoint yourself. With BAP you're on a
 stealth route by construction — there's no non-stealth route to get wrong.
 
@@ -77,8 +78,8 @@ Reach for **BAP** by default. It only connects to `/bql`, so you land on a steal
 construction, and it drops the CDP handshake for a single WebSocket.
 
 Reach for **Playwright** (script 3) when you already have Playwright code, or you need an API BAP
-doesn't cover. Just remember the trap the CDP route brings with it: `emulationOs` is rejected on
-plain `/chromium`, so you have to pick `/chromium/stealth` yourself.
+doesn't cover. Just remember the trap the CDP route brings with it: `emulationOs` is silently
+ignored on plain `/chromium`, so you have to pick `/chromium/stealth` yourself.
 
 ## What you should see
 
@@ -126,18 +127,20 @@ and 448 with matching pixel ratios are all normal.
 ## Notes
 
 - **Lowercase only.** `run-1-bql.sh` checks the value before it sends anything, so a capital
-  `Windows` fails instantly. Send one anyway and the API returns HTTP 400 — invalid values are
-  rejected, not silently ignored, so a typo can never leave you with a browser that quietly
-  isn't emulating anything.
-- **Stealth routes only.** `emulationOs` is accepted on `/chromium/bql` and `/chromium/stealth`.
-  Plain `/chromium` and the REST APIs return 400.
+  `Windows` fails instantly. That check exists because the API won't do it for you: an invalid
+  value isn't rejected, it's silently ignored, and the session runs with its default Linux
+  identity. Read `navigator.platform` back to confirm what you got.
+- **Supported routes only.** `emulationOs` applies on the stealth and BQL routes (`/stealth`,
+  `/chromium/stealth`, `/chrome/stealth`, `/*/bql`), on `/unblock` and `/smart-scrape`, and on
+  `/chromium/agent`. On plain `/chromium` it's ignored, again without an error.
 - **`newPage()` is what provisions the session.** `Browserless.connect()` opens no socket; the
   WebSocket opens on `newPage()`, so the emulated device metrics are already applied to the page
   it hands back. The SDK appends `&token=` when the endpoint already carries a query string,
   which is why `emulationOs` can live directly in the endpoint URL.
-- **Use the provisioned page (script 3).** Playwright reads `contexts()[0].pages()[0]` rather
-  than calling `newPage()`, because the device metrics are applied to the page Browserless already
-  opened. BAP has no such trap — its `newPage()` is what provisions the session.
+- **Stay in the default context (script 3).** Playwright reads `contexts()[0].pages()[0]`.
+  The emulated identity and device metrics carry over to new pages in the session, but a context
+  created with `browser.newContext()` doesn't inherit launch-level settings such as proxies.
+  BAP has no such trap — its `newPage()` is what provisions the session.
 - **Lazy images.** The sandbox lazy-loads its product images, so the ones below the fold never
   enter the viewport and never finish loading — at a narrow mobile width, a wait-for-all-images
   can never complete. Script 2 bounds `waitForImages` and falls back to an immediate capture;
@@ -150,6 +153,6 @@ and 448 with matching pixel ratios are all normal.
 
 ## Requirements
 
-- Node 18 or newer (Scripts 2 and 3)
+- Node 20.17+ or 22.9+ with npm 11.10 or newer (Scripts 2 and 3; the BAP SDK requires that npm)
 - bash and `jq` (Script 1)
 - A [Browserless](https://browserless.io) API token

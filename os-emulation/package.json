@@ -4,7 +4,8 @@
   "description": "Emulate a full OS identity — UA, platform, GPU, viewport, touch — with one Browserless query param",
   "type": "module",
   "engines": {
-    "node": ">=18"
+    "node": "^20.17.0 || >=22.9.0",
+    "npm": ">=11.10.0"
   },
   "dependencies": {
     "@browserless.io/bap-ts": "^1.5.0",
