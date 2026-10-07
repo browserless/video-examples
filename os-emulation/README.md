@@ -27,9 +27,9 @@ speaking CDP to a remote Chrome, the SDK speaks BrowserQL over a single WebSocke
 a familiar Puppeteer-shaped API — `newPage`, `goto`, `evaluate`, `screenshot`.
 
 It's the natural fit for this example because **BAP only connects to `/bql` endpoints, and those
-are stealth routes**. `emulationOs` is silently ignored on plain CDP routes like `/chromium`, so driving
-this over CDP means remembering to pick the stealth endpoint yourself. With BAP you're on a
-stealth route by construction — there's no non-stealth route to get wrong.
+are stealth routes**. `emulationOs` is silently ignored on plain CDP routes like `/chromium`,
+so driving this over CDP means remembering to pick the stealth endpoint yourself. With BAP
+you're on a stealth route by construction — there's no non-stealth route to get wrong.
 
 ## Files
 
