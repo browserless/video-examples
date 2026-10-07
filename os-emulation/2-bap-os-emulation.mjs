@@ -5,7 +5,7 @@
 // gives you a familiar Puppeteer-shaped API — newPage, goto, evaluate, screenshot.
 //
 // It matters here for one reason: BAP only connects to `/bql` endpoints, and those are
-// Browserless's STEALTH routes. `emulationOs` is rejected on plain CDP routes like
+// Browserless's STEALTH routes. `emulationOs` is silently ignored on plain CDP routes like
 // /chromium, so with CDP you have to remember to pick the stealth endpoint. With BAP
 // you're on one by construction — there is no non-stealth route to get wrong.
 //

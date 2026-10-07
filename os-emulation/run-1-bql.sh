@@ -6,7 +6,7 @@
 #   ./run-1-bql.sh macos
 set -euo pipefail
 
-ALLOWED="windows macos linux android"   # lowercase only — the API rejects anything else
+ALLOWED="windows macos linux android"   # lowercase only — the API silently ignores anything else
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Load .env if present, so `cp .env.example .env` is all the setup you need.
@@ -25,7 +25,8 @@ fi
 OS="${1:-windows}"
 BASE="${BROWSERLESS_BASE:-https://production-sfo.browserless.io}"
 
-# Validate before spending a round trip, so a typo fails instantly with a useful message.
+# Validate before sending: the API doesn't reject a typo, it ignores it and runs the default
+# Linux identity, so without this check a typo would look like a successful run.
 case " $ALLOWED " in
   *" $OS "*) ;;
   *)
