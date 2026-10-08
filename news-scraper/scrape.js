@@ -109,7 +109,9 @@ async function scrapeSource(source) {
   let browser
   try {
     browser = await chromium.connectOverCDP(endpoint(source), { timeout: NAV_TIMEOUT })
-    const context = await browser.newContext()
+    // Use the default context. A context from browser.newContext() doesn't inherit the proxy or
+    // launch settings from the connection URL, so residential sources would use a datacenter IP.
+    const context = browser.contexts()[0]
     const page = await context.newPage()
     page.setDefaultTimeout(SELECTOR_TIMEOUT)
 

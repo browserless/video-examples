@@ -36,7 +36,7 @@ uninstall() {
 
 # Find Node. We bake its absolute path into the agent so launchd does not need your shell.
 NODE_BIN="$(command -v node || true)"
-[ -n "$NODE_BIN" ] || { echo "Node was not found. Install Node 18 or newer from https://nodejs.org and re-run."; exit 1; }
+[ -n "$NODE_BIN" ] || { echo "Node was not found. Install Node 20 or newer from https://nodejs.org and re-run."; exit 1; }
 NODE_DIR="$(dirname "$NODE_BIN")"
 
 # The token lives in .env. Make sure it exists and is not still the placeholder.
