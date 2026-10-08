@@ -1,64 +1,71 @@
 # E2E Testing with Browser Agents
 
-Use Claude with the Browserless MCP server to run end-to-end tests from plain-English prompts—no test script required.
+Use Claude with the Browserless MCP server to run end-to-end tests from plain-English prompts, with no test script required.
 
 ## Requirements
 
 - [Claude](https://claude.ai)
-- A [Browserless account](https://www.browserless.io)
+- A [Browserless account](https://www.browserless.io) and API token
 - The Browserless MCP server connected to Claude
 
 ## Setup
 
-In Claude, open **Customize → Connectors → Add → Add custom connector**. Name the connector `Browserless` and use:
+In Claude.ai, open **Customize → Connectors → Add custom connector** and name it `Browserless`. The connector form only accepts a URL, so pass your API token from the Browserless dashboard as a query parameter:
 
 ```text
-https://mcp.browserless.io/mcp
+https://mcp.browserless.io/mcp?token=YOUR_API_TOKEN_HERE
 ```
 
-Connect your Browserless account when prompted.
+Clients that support OAuth, such as Claude Desktop, can use `https://mcp.browserless.io/mcp` without a token and sign in with your Browserless account instead.
+
+After connecting, confirm the `browserless_agent` tool is enabled.
+
+## Keep one browser session for the whole test
+
+`browserless_agent` sessions are one-shot by default. Each prompt below asks Claude to keep the same browser session alive for every step, so the cart survives from adding a product to opening the cart, and to close it on the last call. Kept sessions also close after 15 idle minutes.
 
 ## Add-to-cart test
 
 ```text
-Use the Browserless Agent to run an end-to-end test on this demo shop:
+Use the browserless_agent tool to run an end-to-end test on this demo shop.
+Keep the same browser session alive for every step.
 
 https://scraping-sandbox.netlify.app/products
 
-I want you to test a way a shopper can add a product to the cart.
+Test: Add to cart from the products page
 
-Test - Add to cart from the products page
-1. Open https://scraping-sandbox.netlify.app/products.
+1. Open the products page.
 2. Confirm the product catalog loads and multiple products are visible.
-3. Choose one product from the catalog.
-4. Without opening its individual product page, click the Add to Cart button directly inside that product's card on the /products page.
+3. Choose one in-stock product and record its exact name.
+4. Without opening its product page, click Add to Cart inside that product's card.
 5. Open the cart.
-6. Verify that the exact product you selected appears in the cart.
-7. Report this test as PASS if the correct product is in the cart, or FAIL if it is not.
+6. Verify that the exact product selected in step 3 appears in the cart.
 
-For each test, briefly describe the actions you took and what you observed.
-
-Do not continue into checkout. The test is complete once you have confirmed that each product was successfully added to the cart using its respective flow.
+Report PASS only if the correct product is present. Otherwise report FAIL.
+Briefly list the actions taken and the evidence observed.
+On the last browserless_agent call, send keepSessionAlive: false to close the session.
+Do not continue into checkout.
 ```
 
 ## Intentionally failing test
 
-This prompt uses the wrong expected result to demonstrate that the agent checks the live browser state rather than automatically reporting success.
+This prompt uses the wrong expected result to show that the agent checks the live browser state rather than automatically reporting success. The correct outcome is `FAIL`.
 
 ```text
-Use the Browserless Agent to run this end-to-end test on:
+Use the browserless_agent tool to run this end-to-end test.
+Keep the same browser session alive for every step.
 
 https://scraping-sandbox.netlify.app/products
 
 1. Open the products page.
-2. Choose any product from the catalog.
-3. Click the Add to Cart button directly inside that product's card on the /products page.
-4. Open the cart.
-5. Verify that the product you selected does NOT appear in the cart.
+2. Confirm the product catalog loads and multiple products are visible.
+3. Choose one in-stock product and record its exact name.
+4. Without opening its product page, click Add to Cart inside that product's card.
+5. Open the cart.
+6. Verify that the selected product does NOT appear in the cart.
 
-The expected result for this test is that the selected product should not be present in the cart.
-
-Report the test as PASS only if the product is missing from the cart. If the product appears in the cart, report the test as FAIL and explain what you observed.
-
+The expected result is that the selected product should be missing.
+Report PASS only if it is missing. If it appears, report FAIL and explain the evidence.
+On the last browserless_agent call, send keepSessionAlive: false to close the session.
 Do not continue beyond the cart.
 ```

@@ -123,5 +123,5 @@ for the send-message tool.
 ## Requirements
 
 - macOS for the automated launchd setup (the scraper itself runs anywhere Node runs).
-- Node 18 or newer.
+- Node 20 or newer (current `playwright-core` releases require it).
 - A [Browserless](https://browserless.io) API token.
