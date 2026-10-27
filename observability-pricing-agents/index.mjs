@@ -65,7 +65,7 @@ function render() {
 
   const unrecorded = [...runs.values()].filter((run) => run.replayError);
   if (unrecorded.length) {
-    console.log(`Not recorded (${unrecorded[0].replayError}): ${unrecorded.map((run) => run.vendor).join(', ')}`);
+    console.log(`Not recorded: ${unrecorded.map((run) => run.vendor).join(', ')}`);
   }
 }
 
