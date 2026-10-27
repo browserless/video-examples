@@ -39,6 +39,30 @@ There are no npm dependencies to install.
 
 The script immediately submits all 5 runs, then shows a live terminal dashboard as each agent moves through `pending`, `running`, and `succeeded`/`failed` states. When all runs finish it prints a normalized comparison table and the complete JSON output with source URLs, and saves that JSON to a timestamped file under `results/` (gitignored).
 
+## Session replay (paid plans)
+
+Every run is sent with `replay: true`, so Browserless records it as a
+[Session Replay](https://docs.browserless.io/rest-apis/agent-run#recording-the-run).
+Each recording appears on the
+[Session Replay page](https://browserless.io/account/session-replay) of your
+dashboard once that run's browser session closes. You can play back every page
+the agent opened and every click it made.
+
+**Session Replay requires a paid Browserless plan** (Prototyping, Starter,
+Scale, or Enterprise). On the free plan, turn it off:
+
+```bash
+REPLAY=false BROWSERLESS_TOKEN=YOUR_TOKEN npm start
+```
+
+The account also needs one free concurrent browser per vendor. If a run can't
+get its own session (for example, the account is at its concurrency limit), the
+run still finishes but isn't recorded. The dashboard lists those vendors under
+"Not recorded", and the saved JSON includes `replayError: "session_unavailable"`.
+
+Replays record DOM events, not a video file. To use one as footage, screen-record
+the dashboard's replay player.
+
 ## Customize the vendors
 
 Pass a comma-separated list:
@@ -58,6 +82,9 @@ POLL_MS=2500
 
 # Per-agent timeout; /agent/run currently caps this at 15 minutes
 AGENT_TIMEOUT_MS=900000
+
+# Session Replay recording; set to false on the free plan
+REPLAY=true
 ```
 
 ## Video flow
@@ -70,6 +97,7 @@ A simple recording sequence:
 4. Let the 5 rows visibly progress independently.
 5. Cut to the final normalized table.
 6. Open one returned `pricing_sources` URL to show that the answer came from the vendor's own site.
+7. Open the Session Replay page and play back a few runs to show how each agent found its answer.
 
 The point of the demo is not just that an agent can research pricing. It is that an application can programmatically launch many independent browser-research jobs at once and consume their structured results.
 

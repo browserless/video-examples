@@ -16,6 +16,8 @@ const TOKEN = process.env.BROWSERLESS_TOKEN;
 const BASE_URL = (process.env.BROWSERLESS_BASE_URL || 'https://production-sfo.browserless.io').replace(/\/$/, '');
 const POLL_MS = Number(process.env.POLL_MS || 2500);
 const TIMEOUT_MS = Number(process.env.AGENT_TIMEOUT_MS || 900000);
+// Record each run as a Session Replay (paid plans only). Set REPLAY=false to turn it off.
+const REPLAY = process.env.REPLAY !== 'false';
 
 if (!TOKEN) {
   console.error('Missing BROWSERLESS_TOKEN.');
@@ -30,6 +32,7 @@ const runs = new Map(VENDORS.map((vendor) => [vendor, {
   steps: [],
   result: null,
   error: null,
+  replayError: null,
 }]));
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -59,6 +62,11 @@ function render() {
 
   const complete = [...runs.values()].filter((run) => ['succeeded', 'failed', 'timed_out', 'stopped'].includes(run.status)).length;
   console.log(`\n${complete}/${runs.size} runs finished`);
+
+  const unrecorded = [...runs.values()].filter((run) => run.replayError);
+  if (unrecorded.length) {
+    console.log(`Not recorded: ${unrecorded.map((run) => run.vendor).join(', ')}`);
+  }
 }
 
 async function createRun(vendor) {
@@ -69,7 +77,7 @@ async function createRun(vendor) {
   const response = await fetch(endpoint('/agent/run'), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ query: buildPrompt(vendor), timeout: TIMEOUT_MS }),
+    body: JSON.stringify({ query: buildPrompt(vendor), timeout: TIMEOUT_MS, replay: REPLAY }),
   });
 
   if (!response.ok) {
@@ -96,6 +104,7 @@ async function pollRun(run) {
     run.status = body.status;
     run.steps = Array.isArray(body.steps) ? body.steps : [];
     run.error = body.error || null;
+    run.replayError = body.replayError || null;
 
     if (body.status === 'succeeded') {
       run.result = parseResult(body.data);
@@ -153,7 +162,7 @@ function printResults() {
 }
 
 function resultsPayload() {
-  return [...runs.values()].map(({ vendor, id, status, result, error }) => ({ vendor, id, status, result, error }));
+  return [...runs.values()].map(({ vendor, id, status, result, error, replayError }) => ({ vendor, id, status, result, error, replayError }));
 }
 
 function saveResults() {
