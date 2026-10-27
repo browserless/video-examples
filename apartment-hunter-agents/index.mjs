@@ -141,7 +141,7 @@ async function pollRun(run) {
 }
 
 function parseResult(data) {
-  // Without a schema match, /agent/run wraps the output as a JSON string in `data.answer`.
+  // responseSchema is best-effort; if it isn't applied, /agent/run returns its default `{ answer: string }`.
   if (data && typeof data === 'object' && typeof data.answer === 'string') {
     data = data.answer;
   }
