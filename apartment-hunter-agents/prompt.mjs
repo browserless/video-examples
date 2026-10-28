@@ -30,9 +30,10 @@ export const RESPONSE_SCHEMA = {
         required: ['name', 'address', 'rent_usd', 'beds', 'baths', 'pets_allowed', 'in_unit_laundry', 'available_date', 'listing_url'],
       },
     },
+    blocked: { type: 'boolean' },
     notes: { type: ['string', 'null'] },
   },
-  required: ['site', 'listings', 'notes'],
+  required: ['site', 'listings', 'blocked', 'notes'],
 };
 
 export const buildPrompt = (site, criteria = CRITERIA) => `You are searching ONE rental listing site, ${site}, for apartments that match this search:
@@ -58,6 +59,7 @@ RULES
 - listing_url is the direct URL of the listing on ${site}.
 - Decline cookie banners rather than accepting them. Do not sign in, contact landlords, or submit any form.
 - Stop once you have 10 matching listings or have checked the first page of filtered results.
-- If ${site} blocks you or shows no results, return an empty listings array and explain why in notes.
+- If ${site} blocks you with a bot check or an access-denied page, set blocked to true, return an empty listings array, and explain in notes. Otherwise set blocked to false.
+- If ${site} shows no matching results, return an empty listings array and explain why in notes.
 
 Return JSON with site set to "${site}".`;

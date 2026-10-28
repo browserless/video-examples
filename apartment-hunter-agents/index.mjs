@@ -3,11 +3,10 @@ import { fileURLToPath } from 'node:url';
 import { buildPrompt, CRITERIA, RESPONSE_SCHEMA } from './prompt.mjs';
 
 // Each site starts on its own rental search for the city, so the agent doesn't wander the web.
+// Apartments.com and HotPads blocked the agent in testing, so they're left out.
 const ALL_SITES = [
-  { name: 'Apartments.com', startUrl: 'https://www.apartments.com/austin-tx/1-bedrooms-under-1800/' },
+  { name: 'Zumper', startUrl: 'https://www.zumper.com/apartments-for-rent/austin-tx/1-beds/under-1800' },
   { name: 'Zillow', startUrl: 'https://www.zillow.com/austin-tx/rentals/' },
-  { name: 'Zumper', startUrl: 'https://www.zumper.com/apartments-for-rent/austin-tx' },
-  { name: 'HotPads', startUrl: 'https://hotpads.com/austin-tx/apartments-for-rent' },
   { name: 'Craigslist', startUrl: 'https://austin.craigslist.org/search/apa?min_bedrooms=1&max_bedrooms=1&max_price=1800&pets_dog=1&laundry=1' },
 ];
 
@@ -45,7 +44,8 @@ const runs = new Map(SITES.map(({ name }) => [name, {
   replayError: null,
 }]));
 
-const TERMINAL = ['succeeded', 'failed', 'timed_out', 'stopped'];
+// `blocked` is ours: a run that succeeded but whose agent reported a bot check.
+const TERMINAL = ['succeeded', 'blocked', 'failed', 'timed_out', 'stopped'];
 const startedAt = Date.now();
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const endpoint = (path) => `${BASE_URL}${path}?token=${encodeURIComponent(TOKEN)}`;
@@ -133,6 +133,7 @@ async function pollRun(run) {
 
     if (body.status === 'succeeded') {
       run.result = parseResult(body.data);
+      if (run.result?.blocked === true) run.status = 'blocked';
     }
 
     render();

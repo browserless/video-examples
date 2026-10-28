@@ -1,6 +1,6 @@
 # Apartment Hunter — Parallel Agent Runs
 
-A video-friendly demo of Browserless `/agent/run`: send the same apartment search to 5 rental sites at once, one browser agent per site, and merge what they find into one shortlist.
+A video-friendly demo of Browserless `/agent/run`: send the same apartment search to several rental sites at once, one browser agent per site, and merge what they find into one shortlist.
 
 ## What it searches for
 
@@ -14,13 +14,13 @@ Every agent gets the same search, set in `CRITERIA` in `prompt.mjs`:
 
 Sites, each starting on its own Austin rental search (`ALL_SITES` in `index.mjs`):
 
-1. Apartments.com
+1. Zumper
 2. Zillow
-3. Zumper
-4. HotPads
-5. Craigslist
+3. Craigslist
 
 To search a different city, change `CRITERIA` and each site's `startUrl` together.
+
+Apartments.com and HotPads are left out: in testing, both blocked the agent with a bot check (Akamai and PerimeterX) even with stealth and a residential proxy. If you add a site and its agent hits a bot check, its row shows `blocked` and the reason is saved in that run's `notes`.
 
 ## How it works
 
@@ -104,7 +104,7 @@ SEQUENTIAL=false
 1. Show `CRITERIA` and `ALL_SITES`.
 2. Show the request body in `createRun`: `startUrl`, `responseSchema`, `stealth`, the residential proxy and `replay`.
 3. Show `Promise.all(SITES.map(searchSite))`, which is where all the sites start at once.
-4. Run the script and let the 5 rows progress independently.
+4. Run the script and let the rows progress independently.
 5. Cut to the shortlist and open one listing link.
 6. Open the Session Replay page and play back a couple of runs.
 7. Optional: run with `SEQUENTIAL=true` to show the time difference.
