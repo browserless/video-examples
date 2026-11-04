@@ -16,7 +16,7 @@ const TOKEN = process.env.BROWSERLESS_TOKEN;
 const BASE_URL = (process.env.BROWSERLESS_BASE_URL || 'https://production-sfo.browserless.io').replace(/\/$/, '');
 const POLL_MS = Number(process.env.POLL_MS || 2500);
 const TIMEOUT_MS = Number(process.env.AGENT_TIMEOUT_MS || 900000);
-// Record each run as a Session Replay (paid plans only). Set REPLAY=false to turn it off.
+// Record each run as a Session Replay. Set REPLAY=false to turn it off.
 const REPLAY = process.env.REPLAY !== 'false';
 
 if (!TOKEN) {

@@ -39,7 +39,7 @@ There are no npm dependencies to install.
 
 The script immediately submits all 5 runs, then shows a live terminal dashboard as each agent moves through `pending`, `running`, and `succeeded`/`failed` states. When all runs finish it prints a normalized comparison table and the complete JSON output with source URLs, and saves that JSON to a timestamped file under `results/` (gitignored).
 
-## Session replay (paid plans)
+## Session replay
 
 Every run is sent with `replay: true`, so Browserless records it as a
 [Session Replay](https://docs.browserless.io/rest-apis/agent-run#recording-the-run).
@@ -48,8 +48,8 @@ Each recording appears on the
 dashboard once that run's browser session closes. You can play back every page
 the agent opened and every click it made.
 
-**Session Replay requires a paid Browserless plan** (Prototyping, Starter,
-Scale, or Enterprise). On the free plan, turn it off:
+Session Replay is available on every Browserless plan, including the free plan.
+To skip recording, turn it off:
 
 ```bash
 REPLAY=false BROWSERLESS_TOKEN=YOUR_TOKEN npm start
@@ -83,7 +83,7 @@ POLL_MS=2500
 # Per-agent timeout; /agent/run currently caps this at 15 minutes
 AGENT_TIMEOUT_MS=900000
 
-# Session Replay recording; set to false on the free plan
+# Session Replay recording; set to false to skip it
 REPLAY=true
 ```
 
