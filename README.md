@@ -27,8 +27,8 @@ Source code to accompany our YouTube video series. Find the script mentioned in 
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) **26.x** is recommended for development.
-  `.node-version` selects the floating major for compatible version managers;
-  with nvm, run `nvm install 26 && nvm use 26` before entering an example folder.
+  `.nvmrc` selects the floating major; run `nvm install && nvm use` from the
+  repository root before entering an example folder.
   Node 22.x and 24.x remain compatibility targets for customers running these
   examples in their own environments. Individual examples retain their existing
   minimum versions rather than imposing a breaking runtime change.
