@@ -23,6 +23,7 @@ Source code to accompany our YouTube video series. Find the script mentioned in 
 | Amazon Bot Detection & Scraping at Scale | [`amazon-scraper/`](./amazon-scraper) | `/stealth` |
 | News Scraper — daily briefing with Claude Scheduler | [`news-scraper/`](./news-scraper) | `/chromium/stealth` |
 | OS Emulation — one param for a full device identity | [`os-emulation/`](./os-emulation) | `/chromium/bql`, `/chromium/stealth` |
+| Give the OpenAI and Claude Agent SDKs a Real Browser | [`agent-sdks-real-browser/`](./agent-sdks-real-browser) | Browserless MCP |
 
 ## Prerequisites
 
