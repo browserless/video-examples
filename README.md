@@ -27,6 +27,15 @@ Source code to accompany our YouTube video series. Find the script mentioned in 
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) v18+
+- [Node.js](https://nodejs.org/) **26.x** is recommended for development.
+  `.nvmrc` selects the floating major; run `nvm install && nvm use` from the
+  repository root before entering an example folder.
+  Node 22.x and 24.x remain compatibility targets for customers running these
+  examples in their own environments. Individual examples retain their existing
+  minimum versions rather than imposing a breaking runtime change.
+  Official Linux Node 26 binaries require `libatomic` (Debian/Ubuntu: `libatomic1`).
 - [Python 3](https://www.python.org/) 3.8+ (for scripts that use Python)
 - A [Browserless](https://browserless.io) API token
+
+For the macOS news scraper, select the new Node version before rerunning
+`news-scraper/setup-launchd.sh`: its LaunchAgent records the absolute Node path.
