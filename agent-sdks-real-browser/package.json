@@ -1,0 +1,23 @@
+{
+  "name": "agent-sdks-real-browser",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "openai": "tsx --env-file-if-exists=.env openai-agent.ts",
+    "claude": "tsx --env-file-if-exists=.env claude-agent.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=22.9"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "0.3.318",
+    "@openai/agents": "0.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  }
+}
