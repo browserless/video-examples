@@ -12,6 +12,7 @@ Source code to accompany our YouTube video series. Find the script mentioned in 
 
 | Video | Folder | Endpoints |
 |-------|--------|-----------|
+| Apartment Hunter — Browser Agents Searching Rental Sites at Once | [`apartment-hunter-agents/`](./apartment-hunter-agents) | `/agent/run` |
 | E2E Testing with Browser Agents | [`e2e-testing-agents/`](./e2e-testing-agents) | Browserless MCP |
 | Observability Pricing — 10 Browser Agents in Parallel | [`observability-pricing-agents/`](./observability-pricing-agents) | `/agent/run` |
 | Handling 2FA with Browserless LiveURL | [`hybrid-2fa/`](./hybrid-2fa) | LiveURL |
