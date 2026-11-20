@@ -2,13 +2,15 @@
 
 Two small agents, one on the [OpenAI Agents SDK](https://openai.github.io/openai-agents-js/) and one on the [Claude Agent SDK](https://platform.claude.com/docs/en/agent-sdk/overview), get the same task: pull the 10 most recent reviews from a G2 page as JSON.
 
-On their own, both fail. The OpenAI agent's web search only returns snippets, and Claude's built-in `WebFetch` gets the site's bot check instead of the page. Each agent here gets one tool config that points at the hosted [Browserless MCP server](https://docs.browserless.io/mcp/browserless-mcp-server/setup), which gives it a real browser. Neither file contains any browser code.
+Built-in web tools can't be relied on for pages like this. Claude's `WebFetch`, for example, gets an HTTP 403 from the site's bot check. Each agent here gets one tool config that points at the hosted [Browserless MCP server](https://docs.browserless.io/mcp/browserless-mcp-server/setup), which gives it a real browser. Neither file contains any browser code.
 
 | File | What it does |
 |------|--------------|
 | `prompt.ts` | The shared prompt and target URL |
 | `openai-agent.ts` | OpenAI Agents SDK agent with `hostedMcpTool` |
 | `claude-agent.ts` | Claude Agent SDK `query()` with `mcpServers` |
+| `claude-blocked.ts` | The same Claude agent with only its built-in `WebFetch` and `WebSearch` |
+| `plain-fetch.ts` | A plain HTTP request to the page, no browser |
 
 ## Setup
 
@@ -41,6 +43,17 @@ To point both agents at a different page, pass the URL:
 npm run claude -- "https://www.g2.com/products/<product>/reviews"
 ```
 
+## See them fail without Browserless
+
+These hit the same page without Browserless, so you can compare the before and after:
+
+```bash
+npm run fetch
+npm run claude:blocked
+```
+
+- `fetch` sends a plain HTTP request. On G2 it gets a 403 and Cloudflare's bot check, and saves the response to `plain-fetch.html` so you can open the challenge page.
+- `claude:blocked` gives Claude only `WebFetch` and `WebSearch`. It prints each tool call and what came back, so you see the 403. It ignores your local Claude settings and MCP servers, so it can't fall back to a browser tool you've connected elsewhere.
 ## What to look for in the code
 
 **OpenAI Agents SDK:** `hostedMcpTool` with the Browserless MCP URL and a bearer header. Set `requireApproval: "never"`, or the run waits for an approval that never comes.

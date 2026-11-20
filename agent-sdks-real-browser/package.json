@@ -6,6 +6,8 @@
   "scripts": {
     "openai": "tsx --env-file-if-exists=.env openai-agent.ts",
     "claude": "tsx --env-file-if-exists=.env claude-agent.ts",
+    "claude:blocked": "tsx --env-file-if-exists=.env claude-blocked.ts",
+    "fetch": "tsx plain-fetch.ts",
     "typecheck": "tsc --noEmit"
   },
   "engines": {
