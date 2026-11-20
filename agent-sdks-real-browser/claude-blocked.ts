@@ -2,12 +2,14 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { PROMPT } from "./prompt.ts";
 
+// Only the built-in web tools, nothing else.
+const WEB_TOOLS = ["WebFetch", "WebSearch"];
+
 for await (const message of query({
   prompt: PROMPT,
   options: {
-    // Only the built-in web tools, nothing else.
-    tools: ["WebFetch", "WebSearch"],
-    allowedTools: ["WebFetch", "WebSearch"],
+    tools: WEB_TOOLS,
+    allowedTools: WEB_TOOLS,
     // Ignore your local settings and MCP config (including claude.ai connectors such as Browserless),
     // so this run can't quietly fall back to a real browser.
     settingSources: [],
